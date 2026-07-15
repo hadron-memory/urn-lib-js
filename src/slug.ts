@@ -1,0 +1,77 @@
+// Slug validation + derivation. Ported verbatim from hadron-server src/lib/urn.ts.
+
+import { UrnParseError } from './errors.js';
+import { RESERVED_SLUGS } from './registry.js';
+import { hasSchemePrefix } from './scheme.js';
+
+const ATOM_RE = /^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$|^[a-zA-Z0-9]$/;
+
+/**
+ * Parse-time atom shape check: FR-016 charset + FR-017 length only.
+ * Deliberately case-LENIENT (charset allows `A-Z`) — the read/parse path stays
+ * lenient so pre-existing uppercase URNs still resolve; the lowercase-only rule
+ * (#575) is enforced at create/rename in {@link validateUserSlug}.
+ */
+export function validateAtomShape(input: string, atom: string): void {
+  if (atom.length === 0) {
+    throw new UrnParseError(input, 'invalid-segment-shape', atom);
+  }
+  if (atom.length > 64) {
+    throw new UrnParseError(input, 'slug-too-long', atom);
+  }
+  if (!ATOM_RE.test(atom)) {
+    throw new UrnParseError(input, 'invalid-charset', atom);
+  }
+}
+
+/**
+ * Entity-CREATE/RENAME-time slug validation: FR-016 charset + FR-017 length +
+ * FR-019 reserved-word rejection + the #575 lowercase-canonical rule. Throws
+ * `UrnParseError` on any violation.
+ */
+export function validateUserSlug(slug: string): void {
+  validateAtomShape(slug, slug);
+  // Reserved-word check first (case-insensitive), so `Agent` reports
+  // `reserved-word-slug` rather than the case error.
+  if (RESERVED_SLUGS.has(slug.toLowerCase())) {
+    throw new UrnParseError(slug, 'reserved-word-slug', slug);
+  }
+  if (/[A-Z]/.test(slug)) {
+    throw new UrnParseError(slug, 'slug-not-lowercase', slug);
+  }
+}
+
+/**
+ * Validate an organization slug at create/rename boundaries (#376). An org URN
+ * stores the BARE slug and must never itself contain a `:` (the prefix-boundary
+ * invariant the rename cascade relies on), so a scheme prefix or `:` is rejected
+ * up front; everything else reuses the shared slug rules.
+ */
+export function validateOrgSlug(slug: string): void {
+  if (hasSchemePrefix(slug) || slug.includes(':')) {
+    throw new UrnParseError(slug, 'org-urn-not-bare', slug);
+  }
+  validateUserSlug(slug);
+}
+
+/**
+ * Derive a valid, lowercase URN slug atom from a free-form display name (#574).
+ * Lowercases, maps out-of-charset runs to a single hyphen, trims leading/
+ * trailing punctuation, and caps to the 64-char atom limit. Slugification only —
+ * it does NOT reject reserved words. Throws `empty-derived-slug` when nothing
+ * usable survives.
+ */
+export function deriveSlugFromName(name: string): string {
+  let slug = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/^[._-]+|[._-]+$/g, '');
+  if (slug.length > 64) {
+    slug = slug.slice(0, 64).replace(/[._-]+$/g, '');
+  }
+  if (!slug) {
+    throw new UrnParseError(name, 'empty-derived-slug', name);
+  }
+  return slug;
+}

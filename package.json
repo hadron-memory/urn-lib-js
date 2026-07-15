@@ -1,0 +1,33 @@
+{
+  "name": "@hadron-memory/urn-lib-js",
+  "version": "0.0.1",
+  "description": "Hadron URN compose/parse/normalize — fixture-corpus-driven, cross-language parity with urn-lib-go",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./fixtures/corpus.json": "./fixtures/corpus.json"
+  },
+  "files": ["dist", "fixtures/corpus.json"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": ["hadron", "urn", "identifier", "parser"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hadron-memory/urn-lib-js.git"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}

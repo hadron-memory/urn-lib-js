@@ -1,0 +1,58 @@
+# @hadron-memory/urn-lib-js
+
+Hadron URN compose / parse / normalize for JavaScript & TypeScript.
+
+Paired with [`urn-lib-go`](https://github.com/hadron-memory/urn-lib-go). Both
+implementations run the **same conformance corpus** (`fixtures/corpus.json`) —
+the corpus is the contract, so the two languages cannot drift. This exists to
+replace the copy-pasted URN parsers that had already drifted across
+hadron-server / portal / docs / cli (hadron-server#239, #693).
+
+## Status
+
+**Increment 1 — v1-parity core.** This release ports the pure, self-contained
+slice of `hadron-server/src/lib/urn.ts` verbatim, behind the shared corpus:
+
+- **scheme** — `CANONICAL_SCHEME`, `LEGACY_SCHEME`, `hasSchemePrefix`, `normalizeScheme`
+- **registry** — the locked type registry (`URN_TYPES`, `ROLE_MARKERS`, `RESERVED_SLUGS`, …)
+- **normalize** — `normalizeUrnForLookup`, `legacyMemoryUrnToCanonical`, `agentSlugFromUrn`
+- **slug** — `validateAtomShape`, `validateUserSlug`, `validateOrgSlug`, `deriveSlugFromName`
+- **errors** — `UrnParseError` + the machine-stable `UrnParseErrorReason` union
+
+Not yet ported (later increments, gated by the same corpus): `parseUrn` and the
+qualification/format/compose surfaces, then the **grammar-v2 flat forms**
+(hadron-server#694) — `hrn:<type>:<root>[:<container>]:<name-or-loc>`, the
+per-server principal pool, `apprun`, and `#data` fragments.
+
+## Usage
+
+```ts
+import { normalizeUrnForLookup, validateOrgSlug, UrnParseError } from '@hadron-memory/urn-lib-js';
+
+normalizeUrnForLookup('acme.com::specs::cor:urn'); // 'acme.com:specs:cor:urn'
+
+try {
+  validateOrgSlug('Acme.com');
+} catch (e) {
+  if (e instanceof UrnParseError) console.log(e.reason); // 'slug-not-lowercase'
+}
+```
+
+## The conformance corpus
+
+`fixtures/corpus.json` is the source of truth for behavior. Each case is
+`{ fn, in: [args], out?, throws? }` — `out` is the expected return, `throws` is
+the expected `UrnParseError.reason`, and neither means a `void` call that must
+not throw. `test/corpus.test.ts` runs every case against this implementation;
+`urn-lib-go` runs the identical file. **Add behavior by adding a corpus case,
+not by editing a test in one language.**
+
+```bash
+npm install
+npm test          # runs the corpus
+npm run build
+```
+
+## License
+
+MIT © Baragaun, Inc.
