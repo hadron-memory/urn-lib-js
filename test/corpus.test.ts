@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import * as urn from '../src/index.js';
-import { UrnParseError } from '../src/index.js';
+import { UrnParseError, UrnNotQualifiedError } from '../src/index.js';
 
 type Case = {
   fn: string;
@@ -15,6 +15,7 @@ type Case = {
   out?: unknown;
   throws?: string;
   offendingSegment?: string;
+  throwsQualified?: boolean;
 };
 
 const corpusPath = fileURLToPath(new URL('../fixtures/corpus.json', import.meta.url));
@@ -42,6 +43,8 @@ const FNS: Record<string, (a: string[]) => unknown> = {
   formatCanonicalUrn: (a) => urn.formatCanonicalUrn(a[0] as urn.CanonicalUrnType, a[1]!),
   composeNodeUrn: (a) => urn.composeNodeUrn(a[0]!, a[1]!),
   composeEdgeUrn: (a) => urn.composeEdgeUrn(a[0]!, a[1]!),
+  assertFullyQualifiedUrn: (a) => urn.assertFullyQualifiedUrn(a[0]!, a[1] as urn.ExpectedUrnType),
+  splitNodeUrn: (a) => urn.splitNodeUrn(a[0]!),
 };
 
 /** JSON round-trip so objects/null compare structurally across languages. */
@@ -62,6 +65,16 @@ describe('conformance corpus (v1 parity)', () => {
     it(`#${i} ${label}`, () => {
       const fn = FNS[c.fn];
       if (typeof fn !== 'function') throw new Error(`unknown fn "${c.fn}" in corpus`);
+
+      if (c.throwsQualified) {
+        try {
+          fn(c.in);
+          throw new Error('expected UrnNotQualifiedError, but no error was thrown');
+        } catch (err) {
+          expect(err, 'thrown value should be a UrnNotQualifiedError').toBeInstanceOf(UrnNotQualifiedError);
+        }
+        return;
+      }
 
       if (c.throws !== undefined) {
         try {

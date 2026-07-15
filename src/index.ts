@@ -25,3 +25,5 @@ export type { LegacyUrnType, LegacyParsedUrn } from './legacy.js';
 export { parseUrn, isParserCanonical, toParserCanonical } from './parser.js';
 export type { ParsedUrn } from './parser.js';
 export { formatCanonicalUrn, composeNodeUrn, composeEdgeUrn } from './compose.js';
+export { assertFullyQualifiedUrn, splitNodeUrn, UrnNotQualifiedError } from './qualify.js';
+export type { ExpectedUrnType } from './qualify.js';
