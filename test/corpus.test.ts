@@ -14,6 +14,7 @@ type Case = {
   in: string[];
   out?: unknown;
   throws?: string;
+  offendingSegment?: string;
 };
 
 const corpusPath = fileURLToPath(new URL('../fixtures/corpus.json', import.meta.url));
@@ -69,6 +70,9 @@ describe('conformance corpus (v1 parity)', () => {
         } catch (err) {
           expect(err, 'thrown value should be a UrnParseError').toBeInstanceOf(UrnParseError);
           expect((err as UrnParseError).reason).toBe(c.throws);
+          if (c.offendingSegment !== undefined) {
+            expect((err as UrnParseError).offendingSegment).toBe(c.offendingSegment);
+          }
         }
         return;
       }
