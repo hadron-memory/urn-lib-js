@@ -11,7 +11,7 @@ import { UrnParseError } from '../src/index.js';
 
 type Case = {
   fn: string;
-  in: unknown[];
+  in: string[];
   out?: unknown;
   throws?: string;
 };
@@ -19,18 +19,28 @@ type Case = {
 const corpusPath = fileURLToPath(new URL('../fixtures/corpus.json', import.meta.url));
 const corpus = JSON.parse(readFileSync(corpusPath, 'utf8')) as { cases: Case[] };
 
-// Dispatch table: corpus `fn` -> implementation. Keeping this explicit (rather
-// than indexing `urn` by string) keeps the callable surface auditable.
-const FNS: Record<string, (...args: any[]) => unknown> = {
-  hasSchemePrefix: urn.hasSchemePrefix,
-  normalizeScheme: urn.normalizeScheme,
-  normalizeUrnForLookup: urn.normalizeUrnForLookup,
-  legacyMemoryUrnToCanonical: urn.legacyMemoryUrnToCanonical,
-  agentSlugFromUrn: urn.agentSlugFromUrn,
-  validateUserSlug: urn.validateUserSlug,
-  validateOrgSlug: urn.validateOrgSlug,
-  deriveSlugFromName: urn.deriveSlugFromName,
+// Dispatch table: corpus `fn` -> a call taking the raw string arg list. Kept
+// explicit (rather than indexing `urn` by string) so the callable surface is
+// auditable. Composite entries (…FromInput) exercise a chain through string args.
+const FNS: Record<string, (a: string[]) => unknown> = {
+  hasSchemePrefix: (a) => urn.hasSchemePrefix(a[0]!),
+  normalizeScheme: (a) => urn.normalizeScheme(a[0]!),
+  normalizeUrnForLookup: (a) => urn.normalizeUrnForLookup(a[0]!),
+  legacyMemoryUrnToCanonical: (a) => urn.legacyMemoryUrnToCanonical(a[0]!),
+  agentSlugFromUrn: (a) => urn.agentSlugFromUrn(a[0]!),
+  validateUserSlug: (a) => urn.validateUserSlug(a[0]!),
+  validateOrgSlug: (a) => urn.validateOrgSlug(a[0]!),
+  deriveSlugFromName: (a) => urn.deriveSlugFromName(a[0]!),
+  formatUrn: (a) => urn.formatUrn(a[0]!, a[1]!),
+  parseUrnInput: (a) => urn.parseUrnInput(a[0]!),
+  validateUrnTypeFromInput: (a) =>
+    urn.validateUrnType(urn.parseUrnInput(a[0]!), a[1] as urn.LegacyUrnType),
 };
+
+/** JSON round-trip so objects/null compare structurally across languages. */
+function normalize(v: unknown): unknown {
+  return JSON.parse(JSON.stringify(v ?? null));
+}
 
 describe('conformance corpus (v1 parity)', () => {
   it('covers every dispatchable function', () => {
@@ -48,7 +58,7 @@ describe('conformance corpus (v1 parity)', () => {
 
       if (c.throws !== undefined) {
         try {
-          fn(...c.in);
+          fn(c.in);
           throw new Error(`expected UrnParseError(${c.throws}), but no error was thrown`);
         } catch (err) {
           expect(err, 'thrown value should be a UrnParseError').toBeInstanceOf(UrnParseError);
@@ -57,9 +67,9 @@ describe('conformance corpus (v1 parity)', () => {
         return;
       }
 
-      const got = fn(...c.in);
+      const got = fn(c.in);
       if ('out' in c) {
-        expect(got).toStrictEqual(c.out);
+        expect(normalize(got)).toStrictEqual(normalize(c.out));
       }
       // else: void function that must not throw — reaching here is success.
     });

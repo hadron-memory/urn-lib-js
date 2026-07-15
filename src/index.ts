@@ -20,3 +20,5 @@ export {
 export {
   validateAtomShape, validateUserSlug, validateOrgSlug, deriveSlugFromName,
 } from './slug.js';
+export { parseUrnInput, formatUrn, validateUrnType } from './legacy.js';
+export type { LegacyUrnType, LegacyParsedUrn } from './legacy.js';
