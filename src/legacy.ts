@@ -9,6 +9,9 @@ const LEGACY_URN_TYPES = ['org', 'memory', 'agent', 'app', 'node', 'edge', 'user
 /** The small pre-021 type union, plus `loc` and `unknown`. */
 export type LegacyUrnType = (typeof LEGACY_URN_TYPES)[number] | 'loc' | 'unknown';
 
+/** Backward-compat alias for the pre-spec-021 `UrnType` symbol. */
+export type UrnType = LegacyUrnType;
+
 export interface LegacyParsedUrn {
   type: LegacyUrnType;
   value: string;
