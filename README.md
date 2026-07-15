@@ -18,12 +18,14 @@ slice of `hadron-server/src/lib/urn.ts` verbatim, behind the shared corpus:
 - **normalize** — `normalizeUrnForLookup`, `legacyMemoryUrnToCanonical`, `agentSlugFromUrn`
 - **slug** — `validateAtomShape`, `validateUserSlug`, `validateOrgSlug`, `deriveSlugFromName`
 - **legacy** — `parseUrnInput`, `formatUrn`, `validateUrnType` (the pre-021 surface)
+- **parser** — `parseUrn` (the canonical-form parser, D11 cats 1 + 4), `isParserCanonical`, `toParserCanonical`
+- **compose** — `formatCanonicalUrn`, `composeNodeUrn`, `composeEdgeUrn`
 - **errors** — `UrnParseError` + the machine-stable `UrnParseErrorReason` union
 
-Not yet ported (later increments, gated by the same corpus): the **canonical
-parser** `parseUrn` and the qualification/format/compose surfaces that sit on it
-(`assertFullyQualifiedUrn`, `splitNodeUrn`, `formatCanonicalUrn`, `composeNodeUrn`,
-`composeEdgeUrn`), then the **grammar-v2 flat forms**
+Not yet ported (later increments, gated by the same corpus): the **qualification**
+family (`assertFullyQualifiedUrn`, `splitNodeUrn`, `UrnNotQualifiedError`) and the
+install/migration helpers (`composeInstalledAgentUrn`, `parseFor`), then the
+**grammar-v2 flat forms**
 (hadron-server#694) — `hrn:<type>:<root>[:<container>]:<name-or-loc>`, the
 per-server principal pool, `apprun`, and `#data` fragments.
 

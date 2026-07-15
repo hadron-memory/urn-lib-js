@@ -35,6 +35,12 @@ const FNS: Record<string, (a: string[]) => unknown> = {
   parseUrnInput: (a) => urn.parseUrnInput(a[0]!),
   validateUrnTypeFromInput: (a) =>
     urn.validateUrnType(urn.parseUrnInput(a[0]!), a[1] as urn.LegacyUrnType),
+  parseUrn: (a) => urn.parseUrn(a[0]!),
+  isParserCanonical: (a) => urn.isParserCanonical(a[0]!),
+  toParserCanonical: (a) => urn.toParserCanonical(a[0]!),
+  formatCanonicalUrn: (a) => urn.formatCanonicalUrn(a[0] as urn.CanonicalUrnType, a[1]!),
+  composeNodeUrn: (a) => urn.composeNodeUrn(a[0]!, a[1]!),
+  composeEdgeUrn: (a) => urn.composeEdgeUrn(a[0]!, a[1]!),
 };
 
 /** JSON round-trip so objects/null compare structurally across languages. */
