@@ -16,6 +16,7 @@ type Case = {
   throws?: string;
   offendingSegment?: string;
   throwsQualified?: boolean;
+  throwsAny?: boolean;
 };
 
 const corpusPath = fileURLToPath(new URL('../fixtures/corpus.json', import.meta.url));
@@ -45,6 +46,8 @@ const FNS: Record<string, (a: string[]) => unknown> = {
   composeEdgeUrn: (a) => urn.composeEdgeUrn(a[0]!, a[1]!),
   assertFullyQualifiedUrn: (a) => urn.assertFullyQualifiedUrn(a[0]!, a[1] as urn.ExpectedUrnType),
   splitNodeUrn: (a) => urn.splitNodeUrn(a[0]!),
+  composeInstalledAgentUrn: (a) => urn.composeInstalledAgentUrn(a[0]!, a[1]!),
+  parseForRow: (a) => urn.parseFor({ urn: a[0]!, urnNormalizedAt: a[1] === '1' ? new Date(0) : null }),
 };
 
 /** JSON round-trip so objects/null compare structurally across languages. */
@@ -73,6 +76,11 @@ describe('conformance corpus (v1 parity)', () => {
         } catch (err) {
           expect(err, 'thrown value should be a UrnNotQualifiedError').toBeInstanceOf(UrnNotQualifiedError);
         }
+        return;
+      }
+
+      if (c.throwsAny) {
+        expect(() => fn(c.in)).toThrow();
         return;
       }
 
