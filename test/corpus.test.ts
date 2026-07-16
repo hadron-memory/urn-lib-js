@@ -48,6 +48,7 @@ const FNS: Record<string, (a: string[]) => unknown> = {
   splitNodeUrn: (a) => urn.splitNodeUrn(a[0]!),
   composeInstalledAgentUrn: (a) => urn.composeInstalledAgentUrn(a[0]!, a[1]!),
   parseForRow: (a) => urn.parseFor({ urn: a[0]!, urnNormalizedAt: a[1] === '1' ? new Date(0) : null }),
+  parseDisplayUrn: (a) => urn.parseDisplayUrn(a[0]!, a[1] as urn.DisplayUrnType | undefined),
 };
 
 /** JSON round-trip so objects/null compare structurally across languages. */

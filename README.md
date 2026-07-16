@@ -20,6 +20,7 @@ slice of `hadron-server/src/lib/urn.ts` verbatim, behind the shared corpus:
 - **legacy** — `parseUrnInput`, `formatUrn`, `validateUrnType` (the pre-021 surface)
 - **parser** — `parseUrn` (the canonical-form parser, D11 cats 1 + 4), `isParserCanonical`, `toParserCanonical`
 - **compose** — `formatCanonicalUrn`, `composeNodeUrn`, `composeEdgeUrn`
+- **display** — `parseDisplayUrn`, `DISPLAY_URN_TYPES` (the tolerant spec-010 chip parser/registry — separate from the strict canonical parser; falls back to `unknown` for unregistered display kinds)
 - **errors** — `UrnParseError` + the machine-stable `UrnParseErrorReason` union
 
 Not yet ported (later increments, gated by the same corpus): the **qualification**
