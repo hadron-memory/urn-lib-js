@@ -24,8 +24,39 @@ export interface ParsedUrn {
  * Excludes `org`/`user` (their position-0 segment is the entity's own slug).
  */
 const OWNER_NAMESPACED_TYPES: ReadonlySet<string> = new Set<string>([
-  'app', 'agent', 'memory', 'edge', ...NODE_URN_TYPES,
+  // `secret` (#679): its owner ROOT may be a user `@<handle>` like the others.
+  'app', 'agent', 'memory', 'edge', 'secret', ...NODE_URN_TYPES,
 ]);
+
+/**
+ * Secret (#679): normalize a `user:<handle>` owner-root to the canonical
+ * `@<handle>` form (both spellings are valid + equivalent; `@<handle>` is
+ * canonical). Applies to the ROOT (position 0) of a secret URN only.
+ */
+function rewriteSecretUserRoot(segments: string[]): string[] {
+  if (segments.length === 0) return segments;
+  const m = /^user:([A-Za-z0-9._-]+)$/.exec(segments[0]!);
+  return m ? [`@${m[1]}`, ...segments.slice(1)] : segments;
+}
+
+/**
+ * Secret (#679) shape check at parse time. A secret URN is
+ * `<root>::[<app|memory>:<slug>::]<name>` — at most 3 hierarchy segments, and
+ * when the middle owner segment is present it MUST be exactly `app:<slug>` or
+ * `memory:<slug>`. Rejecting a bad marker here keeps parseUrn consistent with
+ * the resolution parser instead of parse-OK-then-resolve-fail.
+ */
+function validateSecretSegments(input: string, segments: string[]): void {
+  if (segments.length > 3) {
+    throw new UrnParseError(input, 'invalid-segment-shape', segments[3]);
+  }
+  if (segments.length === 3) {
+    const atoms = segments[1]!.split(':');
+    if (atoms.length !== 2 || (atoms[0] !== 'app' && atoms[0] !== 'memory')) {
+      throw new UrnParseError(input, 'invalid-segment-shape', segments[1]);
+    }
+  }
+}
 
 /** Parse-time per-segment charset/length validation + the spec-047 `@handle` gate. */
 function validatePathSegment(
@@ -84,6 +115,13 @@ function rejectInvalidSegmentShapes(input: string, type: string, segments: strin
 
 /** Position-aware reserved-word rejection during parsing. */
 function rejectReservedWordsAtIllegalPositions(input: string, type: string, segments: string[]): void {
+  // Secret (#679): its positions (`<root>::[<app|memory>:<slug>::]<name>`) don't
+  // follow the node/memory role-marker rules; enforce its own shape here (it
+  // skips cat-4 stripping, so a bad marker would otherwise only fail at resolution).
+  if (type === 'secret') {
+    validateSecretSegments(input, segments);
+    return;
+  }
   const finalIdx = segments.length - 1;
   let roleMarkerIdx: number | null;
   let minSegments: number;
@@ -120,6 +158,9 @@ function rejectReservedWordsAtIllegalPositions(input: string, type: string, segm
 
 /** Cat 4 — strip optional type markers (`app:`/`agent:`/`memory:`) per segment. */
 function stripTypeMarkers(segments: string[], urnType: string): { segments: string[]; fired: boolean } {
+  // Secret (#679): the `app:`/`memory:` marker on a secret's owner segment is
+  // STRUCTURAL (distinguishes app-owned from memory-owned) — never strip it.
+  if (urnType === 'secret') return { segments, fired: false };
   let fired = false;
   const isNodeUrn = NODE_URN_TYPES.has(urnType);
   const lastIdx = segments.length - 1;
@@ -199,14 +240,19 @@ export function parseUrn(input: string): ParsedUrn {
   if (rawSegments.some((s) => s.length === 0)) {
     throw new UrnParseError(input, 'empty-segment');
   }
-  for (let i = 0; i < rawSegments.length; i++) {
-    validatePathSegment(input, rawSegments[i]!, type, i, rawSegments.length);
+
+  // Secret (#679): a user owner-root may be written `user:<handle>`; normalize
+  // it to canonical `@<handle>` at ROOT position 0 before the shape checks.
+  const workSegments = type === 'secret' ? rewriteSecretUserRoot(rawSegments) : rawSegments;
+
+  for (let i = 0; i < workSegments.length; i++) {
+    validatePathSegment(input, workSegments[i]!, type, i, workSegments.length);
   }
 
   const parserRewrites: AliasCategory[] = [];
   if (legacySchemeUsed) parserRewrites.push('legacy-urn-scheme');
 
-  const { segments: cat4Segments, fired: cat4Fired } = stripTypeMarkers(rawSegments, type);
+  const { segments: cat4Segments, fired: cat4Fired } = stripTypeMarkers(workSegments, type);
   if (cat4Fired) parserRewrites.push('type-marker-optionality');
 
   rejectInvalidSegmentShapes(input, type, cat4Segments);

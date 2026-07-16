@@ -7,7 +7,7 @@
 export const CORE_TYPES = [
   'agent', 'app', 'app-user', 'ai-config', 'asset', 'edge',
   'license', 'memory', 'node', 'org', 'platform', 'reference',
-  'session', 'subscription', 'usage', 'user',
+  'secret', 'session', 'subscription', 'usage', 'user',
 ] as const;
 
 /** Node types. */

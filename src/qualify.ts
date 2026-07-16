@@ -5,10 +5,15 @@
 import { UrnParseError } from './errors.js';
 import { hasSchemePrefix } from './scheme.js';
 
-export type ExpectedUrnType = 'org' | 'memory' | 'agent' | 'app' | 'node' | 'edge' | 'user';
+export type ExpectedUrnType =
+  | 'org' | 'memory' | 'agent' | 'app' | 'node' | 'edge' | 'user' | 'secret';
 
 const MIN_HIERARCHY_SEGMENTS: Record<ExpectedUrnType, number> = {
   org: 1, memory: 2, agent: 2, app: 2, node: 3, edge: 3, user: 1,
+  // Secret (#679): owner-dependent depth — 2 for org-/user-owned, 3 for
+  // app-/memory-owned. The gate only checks a minimum, so 2 admits both; the
+  // marker structure is validated deeper in the parser.
+  secret: 2,
 };
 
 const MIN_SEGMENTS_HINT: Record<ExpectedUrnType, string> = {
@@ -19,6 +24,7 @@ const MIN_SEGMENTS_HINT: Record<ExpectedUrnType, string> = {
   node: '3 hierarchy segments (org::memory::loc, e.g., "acme.com::mmdata::review:sort-imports")',
   edge: '3 hierarchy segments (org::memory::loc, e.g., "acme.com::mmdata::intro:next")',
   user: '1 hierarchy segment (the handle, e.g., "holger")',
+  secret: '2+ hierarchy segments (owner root :: [app|memory:slug ::] name, e.g., "acme.com::stripe-key" or "acme.com::app:internal-ops::stripe-key")',
 };
 
 /** Node-role types that alias for `node` at the qualification boundary (D11 cat 2). */
