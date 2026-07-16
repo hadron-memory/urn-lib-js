@@ -8,7 +8,7 @@
 // (hadron-portal#393). Strict validation/canonical grammar still belongs to
 // `parseUrn` and the grammar corpus.
 
-import { CANONICAL_SCHEME } from './scheme.js';
+import { CANONICAL_SCHEME, hasSchemePrefix } from './scheme.js';
 
 /**
  * The visible URN kinds the display layer renders as a typed chip. This is
@@ -65,12 +65,17 @@ export function parseDisplayUrn(
     return { type, bareValue, fullUrn: `${CANONICAL_SCHEME}:${type}:${bareValue}` };
   }
 
-  if (typeHint) {
+  // Apply the hint only to a bare value. If `value` already carries a scheme
+  // prefix (`hrn:`/`urn:`) but its kind is unregistered, the hint must NOT
+  // override it — doing so would double-prefix (`hrn:<hint>:hrn:<kind>:...`)
+  // and mislabel the chip. Such inputs fall through to `unknown` so the missing
+  // display registration stays visible.
+  if (typeHint && !hasSchemePrefix(value)) {
     return { type: typeHint, bareValue: value, fullUrn: `${CANONICAL_SCHEME}:${typeHint}:${value}` };
   }
 
-  // No detectable type and no caller-supplied hint — render as `unknown` so the
-  // gap is visually obvious. The calling scope should always specify a type;
+  // No detectable type and no applicable hint — render as `unknown` so the gap
+  // is visually obvious. The calling scope should always specify a type;
   // reaching this branch signals a missing type at the caller.
   return { type: 'unknown', bareValue: value, fullUrn: `${CANONICAL_SCHEME}:unknown:${value}` };
 }

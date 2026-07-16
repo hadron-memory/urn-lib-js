@@ -1734,6 +1734,18 @@
         "bareValue": "not-a-urn-value",
         "fullUrn": "hrn:unknown:not-a-urn-value"
       }
+    },
+    {
+      "fn": "parseDisplayUrn",
+      "in": [
+        "hrn:secret:acme.com::stripe-key",
+        "memory"
+      ],
+      "out": {
+        "type": "unknown",
+        "bareValue": "hrn:secret:acme.com::stripe-key",
+        "fullUrn": "hrn:unknown:hrn:secret:acme.com::stripe-key"
+      }
     }
   ]
 }
