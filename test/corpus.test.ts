@@ -49,6 +49,9 @@ const FNS: Record<string, (a: string[]) => unknown> = {
   composeInstalledAgentUrn: (a) => urn.composeInstalledAgentUrn(a[0]!, a[1]!),
   parseForRow: (a) => urn.parseFor({ urn: a[0]!, urnNormalizedAt: a[1] === '1' ? new Date(0) : null }),
   parseDisplayUrn: (a) => urn.parseDisplayUrn(a[0]!, a[1] as urn.DisplayUrnType | undefined),
+  parseUrnV2: (a) => urn.parseUrnV2(a[0]!),
+  composeUrnV2: (a) => urn.composeUrnV2(a[0]!, a[1]!, ...a.slice(2)),
+  isFlatV2: (a) => urn.isFlatV2(a[0]!),
 };
 
 /** JSON round-trip so objects/null compare structurally across languages. */

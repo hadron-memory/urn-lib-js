@@ -1,6 +1,6 @@
 {
   "name": "@hadron-memory/urn-lib-js",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Hadron URN compose/parse/normalize — fixture-corpus-driven, cross-language parity with urn-lib-go",
   "type": "module",
   "main": "./dist/index.js",
