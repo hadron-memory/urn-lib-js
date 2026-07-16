@@ -22,6 +22,9 @@
   },
   "keywords": ["hadron", "urn", "identifier", "parser"],
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/hadron-memory/urn-lib-js.git"
