@@ -52,6 +52,11 @@ const FNS: Record<string, (a: string[]) => unknown> = {
   parseUrnV2: (a) => urn.parseUrnV2(a[0]!),
   composeUrnV2: (a) => urn.composeUrnV2(a[0]!, a[1]!, ...a.slice(2)),
   isFlatV2: (a) => urn.isFlatV2(a[0]!),
+  composeSecretUrnV2: (a) => urn.composeSecretUrnV2(a[0]!, a[1]!),
+  composeAppRunUrnV2: (a) => urn.composeAppRunUrnV2(a[0]!, a[1]!, a[2]!),
+  composeNodeRevUrnV2: (a) => urn.composeNodeRevUrnV2(a[0]!, a[1]!, a[2]!, a[3]!),
+  composeDataFragmentV2: (a) => urn.composeDataFragmentV2(a[0]!),
+  parseNodeRevUrnV2: (a) => urn.parseNodeRevUrnV2(a[0]!),
 };
 
 /** JSON round-trip so objects/null compare structurally across languages. */

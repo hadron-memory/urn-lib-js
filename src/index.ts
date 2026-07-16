@@ -34,5 +34,10 @@ export type { UrnRow } from './migrate.js';
 export { DISPLAY_URN_TYPES, parseDisplayUrn } from './display.js';
 export type { DisplayUrnType, DisplayParsedUrnType, ParsedDisplayUrn } from './display.js';
 // Grammar v2 (flat, pool-rooted) — additive, coexists with the v1 surface (#694).
-export { V2_URN_TYPES, parseUrnV2, composeUrnV2, isFlatV2 } from './v2.js';
-export type { V2UrnType, ParsedUrnV2 } from './v2.js';
+// Per-entity shapes + typed compose/parse helpers land in #696.
+export {
+  V2_URN_TYPES, parseUrnV2, composeUrnV2, isFlatV2,
+  composeSecretUrnV2, composeAppRunUrnV2, composeNodeRevUrnV2, composeDataFragmentV2,
+  parseNodeRevUrnV2,
+} from './v2.js';
+export type { V2UrnType, ParsedUrnV2, ParsedNodeRevUrnV2 } from './v2.js';

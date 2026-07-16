@@ -23,12 +23,31 @@ slice of `hadron-server/src/lib/urn.ts` verbatim, behind the shared corpus:
 - **display** — `parseDisplayUrn`, `DISPLAY_URN_TYPES` (the tolerant spec-010 chip parser/registry — separate from the strict canonical parser; falls back to `unknown` for unregistered display kinds)
 - **errors** — `UrnParseError` + the machine-stable `UrnParseErrorReason` union
 
-Not yet ported (later increments, gated by the same corpus): the **qualification**
-family (`assertFullyQualifiedUrn`, `splitNodeUrn`, `UrnNotQualifiedError`) and the
-install/migration helpers (`composeInstalledAgentUrn`, `parseFor`), then the
-**grammar-v2 flat forms**
-(hadron-server#694) — `hrn:<type>:<root>[:<container>]:<name-or-loc>`, the
-per-server principal pool, `apprun`, and `#data` fragments.
+**Grammar-v2 flat forms** (hadron-server#694) are ported: `parseUrnV2` /
+`composeUrnV2` / `isFlatV2` over `hrn:<type>:<root>[:<segment>...]` (single
+colon, no sigil), additive to the v1 surface.
+
+**Per-entity v2 shapes** (hadron-server#696, decision D-2026-07-15-006) are
+ported too:
+
+- **secret** — `hrn:secret:<root>:<name>`, org/user root + exactly one name atom
+  (the v1 `app:`/`memory:` markers have no v2 equivalent and are rejected).
+- **apprun** — `hrn:apprun:<root>:<app>:<run-id>` (fixed arity).
+- **noderev** — `hrn:noderev:<root>:<mem>:<loc...>:<rev>`, **end-anchored** (last
+  atom is the revision id); decompose with `parseNodeRevUrnV2`.
+- **node / edge** — `hrn:<type>:<root>:<mem>:<loc...>` (a memory + at least one
+  loc atom); the loc is an **opaque terminal** (an edge loc is never re-split
+  into `source:target`).
+- **`#data` fragment** — `<node-or-apprun-urn>#data` (node-data is a fragment of
+  its parent, not a standalone type). `composeDataFragmentV2` always emits a
+  canonical `hrn:` URN, even from a legacy `urn:`-scheme parent.
+
+Typed helpers: `composeSecretUrnV2`, `composeAppRunUrnV2`, `composeNodeRevUrnV2`,
+`composeDataFragmentV2`, and `parseNodeRevUrnV2`.
+
+Not yet ported (later increments, gated by the same corpus): legacy chain→flat
+**normalization** + the stored alias map (hadron-server#697) and the unified
+principal-**pool** enforcement (hadron-server#692).
 
 ## Usage
 
