@@ -31,3 +31,5 @@ export { assertFullyQualifiedUrn, splitNodeUrn, UrnNotQualifiedError } from './q
 export type { ExpectedUrnType } from './qualify.js';
 export { parseFor } from './migrate.js';
 export type { UrnRow } from './migrate.js';
+export { DISPLAY_URN_TYPES, parseDisplayUrn } from './display.js';
+export type { DisplayUrnType, DisplayParsedUrnType, ParsedDisplayUrn } from './display.js';
