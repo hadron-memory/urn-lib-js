@@ -85,6 +85,10 @@ function validateV2Arity(input: string, type: string, segments: string[]): void 
     case 'noderev': // hrn:noderev:<root>:<mem>:<loc...>:<rev> — mem + >=1 loc atom + rev.
       if (segments.length < 3) throw new UrnParseError(input, 'invalid-segment-shape');
       break;
+    case 'node': // hrn:node:<root>:<mem>:<loc...> — a memory + at least one loc atom.
+    case 'edge': // hrn:edge:<root>:<mem>:<loc...> — the loc is an opaque terminal.
+      if (segments.length < 2) throw new UrnParseError(input, 'invalid-segment-shape');
+      break;
     default:
       break;
   }
@@ -104,7 +108,7 @@ export function parseUrnV2(input: string): ParsedUrnV2 {
   if (hashIdx !== -1) {
     fragment = input.slice(hashIdx + 1);
     core = input.slice(0, hashIdx);
-    if (!V2_FRAGMENTS.has(fragment)) throw new UrnParseError(input, 'invalid-segment-shape', fragment);
+    if (!V2_FRAGMENTS.has(fragment)) throw new UrnParseError(input, 'invalid-segment-shape', `#${fragment}`);
   }
   const m = core.match(V2_PREFIX_RE);
   if (!m) throw new UrnParseError(input, 'malformed-grammar');
@@ -137,8 +141,11 @@ export function composeUrnV2(type: string, root: string, ...segments: string[]):
   if (!V2_TYPE_SET.has(type)) throw new UrnParseError(type, 'unknown-type', type);
   validateAtomShape(root, root);
   for (const s of segments) validateAtomShape(s, s);
-  validateV2Arity(`${CANONICAL_SCHEME}:${type}:${root}`, type, segments);
-  return `${CANONICAL_SCHEME}:${type}:${[root, ...segments].join(':')}`;
+  const urn = `${CANONICAL_SCHEME}:${type}:${[root, ...segments].join(':')}`;
+  // Validate arity against the FULL composed URN so a thrown error's `input`
+  // reflects what the caller asked for (not a truncated prefix).
+  validateV2Arity(urn, type, segments);
+  return urn;
 }
 
 /** True when `input` is already a canonical grammar-v2 flat URN (round-trips). */
@@ -185,7 +192,10 @@ export function composeDataFragmentV2(parentUrn: string): string {
   if (!FRAGMENT_PARENT_TYPES.has(p.type) || p.fragment !== undefined) {
     throw new UrnParseError(parentUrn, 'invalid-segment-shape', parentUrn);
   }
-  return `${parentUrn}#data`;
+  // Recompose from the parsed pieces so the result is always canonical `hrn:` —
+  // a legacy `urn:`-scheme parent must not leak its scheme into the emission
+  // (every compose path emits canonical, and isFlatV2 must accept the result).
+  return `${CANONICAL_SCHEME}:${p.type}:${[p.root, ...p.segments].join(':')}#data`;
 }
 
 export interface ParsedNodeRevUrnV2 {

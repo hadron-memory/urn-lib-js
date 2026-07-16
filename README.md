@@ -35,10 +35,12 @@ ported too:
 - **apprun** — `hrn:apprun:<root>:<app>:<run-id>` (fixed arity).
 - **noderev** — `hrn:noderev:<root>:<mem>:<loc...>:<rev>`, **end-anchored** (last
   atom is the revision id); decompose with `parseNodeRevUrnV2`.
-- **node / edge** — the loc is an **opaque terminal** (an edge loc is never
-  re-split into `source:target`).
+- **node / edge** — `hrn:<type>:<root>:<mem>:<loc...>` (a memory + at least one
+  loc atom); the loc is an **opaque terminal** (an edge loc is never re-split
+  into `source:target`).
 - **`#data` fragment** — `<node-or-apprun-urn>#data` (node-data is a fragment of
-  its parent, not a standalone type).
+  its parent, not a standalone type). `composeDataFragmentV2` always emits a
+  canonical `hrn:` URN, even from a legacy `urn:`-scheme parent.
 
 Typed helpers: `composeSecretUrnV2`, `composeAppRunUrnV2`, `composeNodeRevUrnV2`,
 `composeDataFragmentV2`, and `parseNodeRevUrnV2`.
