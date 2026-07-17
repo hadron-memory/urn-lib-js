@@ -16,7 +16,7 @@ slice of `hadron-server/src/lib/urn.ts` verbatim, behind the shared corpus:
 - **scheme** — `CANONICAL_SCHEME`, `LEGACY_SCHEME`, `hasSchemePrefix`, `normalizeScheme`
 - **registry** — the locked type registry (`URN_TYPES`, `ROLE_MARKERS`, `RESERVED_SLUGS`, …)
 - **normalize** — `normalizeUrnForLookup`, `legacyMemoryUrnToCanonical`, `agentSlugFromUrn`
-- **slug** — `validateAtomShape`, `validateUserSlug`, `validateOrgSlug`, `deriveSlugFromName`
+- **slug** — `validateAtomShape`, `validateUserSlug`, `validateOrgSlug` (requires a dotted root, #692), `validateUserHandle` (dot-free, #692), `deriveSlugFromName`
 - **legacy** — `parseUrnInput`, `formatUrn`, `validateUrnType` (the pre-021 surface)
 - **parser** — `parseUrn` (the canonical-form parser, D11 cats 1 + 4), `isParserCanonical`, `toParserCanonical`
 - **compose** — `formatCanonicalUrn`, `composeNodeUrn`, `composeEdgeUrn`
