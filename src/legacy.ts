@@ -17,17 +17,26 @@ export interface LegacyParsedUrn {
   value: string;
 }
 
-const LEGACY_URN_RE = /^(?:hrn|urn):(org|memory|agent|app|node|edge|user):(.+)$/;
+// `mem` is the grammar-v2 type word for a memory (v1 `memory` → v2 `mem`, the
+// #697 emission flip). Accepted on input so a v2-emitted `hrn:mem:...` reference
+// round-trips; `memory` stays accepted forever (#239). The `mem` alias is
+// canonicalized to `memory` on parse (below) so every existing `type ===
+// 'memory'` consumer transparently handles v2 input.
+const LEGACY_URN_RE = /^(?:hrn|urn):(org|memory|mem|agent|app|node|edge|user):(.+)$/;
 const LOC_RE = /^loc:(.+)$/;
 
 /**
  * Parse a URN input string, stripping the `hrn:`/`urn:<type>:` or `loc:` prefix.
- * Returns the type and bare value. Unprefixed inputs are returned as type
- * `'unknown'` for backwards compatibility.
+ * Returns the type and bare value. The v2 `mem` type word is normalized to
+ * `memory`. Unprefixed inputs are returned as type `'unknown'` for backwards
+ * compatibility.
  */
 export function parseUrnInput(input: string): LegacyParsedUrn {
   const match = input.match(LEGACY_URN_RE);
-  if (match) return { type: match[1] as LegacyUrnType, value: match[2]! };
+  if (match) {
+    const raw = match[1]!;
+    return { type: (raw === 'mem' ? 'memory' : raw) as LegacyUrnType, value: match[2]! };
+  }
   const locMatch = input.match(LOC_RE);
   if (locMatch) return { type: 'loc', value: locMatch[1]! };
   return { type: 'unknown', value: input };
