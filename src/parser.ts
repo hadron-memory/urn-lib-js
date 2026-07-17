@@ -8,6 +8,7 @@ import {
   type CanonicalUrnType, type AliasCategory,
 } from './registry.js';
 import { validateAtomShape } from './slug.js';
+import { parseUrnV2 } from './v2.js';
 
 export interface ParsedUrn {
   type: CanonicalUrnType;
@@ -212,11 +213,74 @@ const PREFIX_RE = /^(hrn|urn):([a-z][a-z0-9-]*):(.+)$/;
 const EMBEDDED_LOC_RE = /(^|::)loc:/;
 
 /**
+ * grammar-v2 flat type words that have a v1 canonical equivalent, mapped to it.
+ * A v2-emitted URN of one of these types is delegated to `parseUrnV2` and mapped
+ * into the `ParsedUrn` shape (`mem` → `memory`, #697 emission flip). v2-ONLY
+ * types (`apprun`, `noderev`, `appkey`, …) are absent on purpose — they never
+ * existed in the v1 parser surface, so a `hrn:apprun:…` input keeps its v1
+ * `unknown-type` error rather than silently gaining a partial parse here.
+ */
+const V2_TO_V1_TYPE: Readonly<Record<string, CanonicalUrnType>> = {
+  mem: 'memory', org: 'org', user: 'user', agent: 'agent', app: 'app',
+  node: 'node', edge: 'edge', asset: 'asset', secret: 'secret',
+};
+
+/**
+ * Delegate a v1-rejected input to the grammar-v2 flat parser (#697). Returns a
+ * `ParsedUrn` when `input` is a flat-v2 URN of a type with a v1 equivalent,
+ * else `null` (so `parseUrn` rethrows the original v1 error). The `.type` field
+ * is the mapped v1 word (for consumer `switch (type)` dispatch) while
+ * `.parserCanonical` keeps the actual v2 type word so the canonical string is a
+ * valid, round-tripping v2 URN. v2 is already flat/pool-rooted, so no D11
+ * resolver canonicalization applies.
+ */
+function tryParseFlatV2(input: string): ParsedUrn | null {
+  let parsed;
+  try {
+    parsed = parseUrnV2(input);
+  } catch {
+    return null;
+  }
+  const mappedType = V2_TO_V1_TYPE[parsed.type];
+  if (!mappedType) return null;
+  const parserRewrites: AliasCategory[] = [];
+  if (input.startsWith(`${LEGACY_SCHEME}:`)) parserRewrites.push('legacy-urn-scheme');
+  const frag = parsed.fragment !== undefined ? `#${parsed.fragment}` : '';
+  const pathSegments = [parsed.root, ...parsed.segments];
+  return {
+    type: mappedType,
+    pathSegments,
+    parserCanonical: `${CANONICAL_SCHEME}:${parsed.type}:${pathSegments.join(':')}${frag}`,
+    inputForm: input,
+    parserRewrites,
+    needsResolverCanonicalization: false,
+  };
+}
+
+/**
  * Parse a URN string. Returns a `ParsedUrn` with parser-layer canonicalization
  * (D11 cats 1, 4) applied. Throws `UrnParseError` on any acceptance violation.
  * Slug storage is case-sensitive; only the reserved-word check folds case.
+ *
+ * The v1 grammar is tried first; a v1-rejected input that is a valid flat
+ * grammar-v2 URN (single-colon, pool-rooted, `mem` type word — #697) is
+ * delegated to `parseUrnV2` and mapped into the `ParsedUrn` shape. v1-accepted
+ * inputs keep their exact v1 result, so no existing behavior changes.
  */
 export function parseUrn(input: string): ParsedUrn {
+  try {
+    return parseUrnV1(input);
+  } catch (err) {
+    if (err instanceof UrnParseError) {
+      const v2 = tryParseFlatV2(input);
+      if (v2) return v2;
+    }
+    throw err;
+  }
+}
+
+/** The v1-grammar parser (spec 021). See `parseUrn` for the v2 delegation wrapper. */
+function parseUrnV1(input: string): ParsedUrn {
   if (LOC_PREFIX_RE.test(input)) {
     throw new UrnParseError(input, 'loc-segment-rejected');
   }
