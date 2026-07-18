@@ -4,6 +4,14 @@ import { UrnParseError } from './errors.js';
 import { RESERVED_SLUGS } from './registry.js';
 import { hasSchemePrefix } from './scheme.js';
 
+/**
+ * The maximum length of a single URN atom / slug, in characters (spec
+ * `cor:urn:010:01`, FR-017). Exported as the single source of truth so lib
+ * internals AND server-side minters (`mintLocalSlug`, the handle generator)
+ * stop re-typing the bare literal `64` (#715).
+ */
+export const MAX_ATOM_LEN = 64;
+
 const ATOM_RE = /^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$|^[a-zA-Z0-9]$/;
 
 /**
@@ -16,7 +24,7 @@ export function validateAtomShape(input: string, atom: string): void {
   if (atom.length === 0) {
     throw new UrnParseError(input, 'invalid-segment-shape', atom);
   }
-  if (atom.length > 64) {
+  if (atom.length > MAX_ATOM_LEN) {
     throw new UrnParseError(input, 'slug-too-long', atom);
   }
   if (!ATOM_RE.test(atom)) {
@@ -88,11 +96,26 @@ export function deriveSlugFromName(name: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9._-]+/g, '-')
     .replace(/^[._-]+|[._-]+$/g, '');
-  if (slug.length > 64) {
-    slug = slug.slice(0, 64).replace(/[._-]+$/g, '');
+  if (slug.length > MAX_ATOM_LEN) {
+    slug = slug.slice(0, MAX_ATOM_LEN).replace(/[._-]+$/g, '');
   }
   if (!slug) {
     throw new UrnParseError(name, 'empty-derived-slug', name);
   }
   return slug;
+}
+
+/**
+ * Boolean form of {@link validateUserSlug}: `true` when `slug` is a legal NEW
+ * entity slug (FR-016 charset + FR-017 length + FR-019 reserved-word + the #575
+ * lowercase-canonical rule), `false` on any violation. Convenience wrapper for
+ * callers that want a predicate instead of a throw (#715).
+ */
+export function isValidSlug(slug: string): boolean {
+  try {
+    validateUserSlug(slug);
+    return true;
+  } catch {
+    return false;
+  }
 }
