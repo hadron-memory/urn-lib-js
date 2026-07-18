@@ -41,9 +41,11 @@ export interface ParsedDisplayUrn {
 // (`hrn:` canonical or legacy `urn:`) display kind for the chip's type badge.
 // Unregistered kinds fall through to `unknown` so missing display registration
 // stays visually obvious. Built from DISPLAY_URN_TYPES so the registry is the
-// single source of truth.
+// single source of truth. `mem` is added as the grammar-v2 memory type word
+// (#697 emission flip): a server-emitted `hrn:mem:<root>:<slug>` renders as the
+// `memory` display kind (mapped below) instead of falling through to `unknown`.
 const DISPLAY_URN_REGEX = new RegExp(
-  `^(?:hrn|urn):(${DISPLAY_URN_TYPES.join('|')}):(.+)$`,
+  `^(?:hrn|urn):(${[...DISPLAY_URN_TYPES, 'mem'].join('|')}):(.+)$`,
 );
 
 /**
@@ -60,9 +62,15 @@ export function parseDisplayUrn(
 ): ParsedDisplayUrn {
   const match = value.match(DISPLAY_URN_REGEX);
   if (match) {
-    const type = match[1] as DisplayUrnType;
+    const rawType = match[1]!;
+    // Grammar-v2 memory (`mem`) renders under the `memory` display badge, but the
+    // reconstructed `fullUrn` KEEPS the `mem` type word — rewriting it to
+    // `hrn:memory:` would pair a v1 type word with the v2 single-colon body and
+    // produce a malformed, non-round-tripping URN. So `type` (the badge) and the
+    // `fullUrn` type word may diverge for a v2 memory URN, by design.
+    const type = (rawType === 'mem' ? 'memory' : rawType) as DisplayUrnType;
     const bareValue = match[2]!;
-    return { type, bareValue, fullUrn: `${CANONICAL_SCHEME}:${type}:${bareValue}` };
+    return { type, bareValue, fullUrn: `${CANONICAL_SCHEME}:${rawType}:${bareValue}` };
   }
 
   // Apply the hint only to a bare value. If `value` already carries a scheme

@@ -84,7 +84,10 @@ export function assertFullyQualifiedUrn(input: string, expectedType: ExpectedUrn
 
   if (prefixType !== null && prefixType !== expectedType) {
     const isNodeRoleAlias = expectedType === 'node' && NODE_ROLE_ALIASES.has(prefixType);
-    if (!isNodeRoleAlias) {
+    // The grammar-v2 `mem` type word aliases `memory` at the boundary (#697
+    // emission flip), so a v2-emitted `hrn:mem:root:slug` qualifies as a memory.
+    const isMemoryAlias = expectedType === 'memory' && prefixType === 'mem';
+    if (!isNodeRoleAlias && !isMemoryAlias) {
       throw new UrnNotQualifiedError(input, undefined, expectedType);
     }
   }

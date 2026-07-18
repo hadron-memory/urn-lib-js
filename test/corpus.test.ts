@@ -35,6 +35,7 @@ const FNS: Record<string, (a: string[]) => unknown> = {
   validateOrgSlug: (a) => urn.validateOrgSlug(a[0]!),
   validateUserHandle: (a) => urn.validateUserHandle(a[0]!),
   deriveSlugFromName: (a) => urn.deriveSlugFromName(a[0]!),
+  isValidSlug: (a) => urn.isValidSlug(a[0]!),
   formatUrn: (a) => urn.formatUrn(a[0]!, a[1]!),
   parseUrnInput: (a) => urn.parseUrnInput(a[0]!),
   validateUrnTypeFromInput: (a) =>

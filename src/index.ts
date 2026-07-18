@@ -18,7 +18,8 @@ export {
   normalizeUrnForLookup, legacyMemoryUrnToCanonical, agentSlugFromUrn,
 } from './normalize.js';
 export {
-  validateAtomShape, validateUserSlug, validateOrgSlug, validateUserHandle, deriveSlugFromName,
+  MAX_ATOM_LEN, validateAtomShape, validateUserSlug, validateOrgSlug, validateUserHandle,
+  deriveSlugFromName, isValidSlug,
 } from './slug.js';
 export { parseUrnInput, formatUrn, validateUrnType } from './legacy.js';
 export type { LegacyUrnType, UrnType, LegacyParsedUrn } from './legacy.js';
