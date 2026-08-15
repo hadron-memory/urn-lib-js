@@ -15,6 +15,9 @@
 // Per-entity arity/container semantics (#696, decision D-2026-07-15-006):
 //   secret   hrn:secret:<root>:<name>                 — org/user root + 1 name atom.
 //   apprun   hrn:apprun:<root>:<app>:<run-id>         — fixed 2 segments.
+//   worker   hrn:worker:<root>:<app>:<worker-slug>    — fixed 2 segments. The leaf
+//            is the Worker's DERIVED slug column, never its display name (which
+//            carries no charset constraint) — see cor:agt:020:02.
 //   noderev  hrn:noderev:<root>:<mem>:<loc...>:<rev>  — END-ANCHORED: last atom is
 //            the revision id, the first post-root atom is the memory, everything
 //            between is the (variable-length, opaque) node loc.
@@ -36,7 +39,7 @@ import { validateAtomShape } from './slug.js';
  */
 export const V2_URN_TYPES = [
   'org', 'user', 'mem', 'agent', 'app', 'node', 'edge', 'asset', 'secret',
-  'apprun', 'noderev', 'appkey', 'aiconf', 'tool', 'server', 'userapikey',
+  'apprun', 'worker', 'noderev', 'appkey', 'aiconf', 'tool', 'server', 'userapikey',
   'agentschedule', 'agentwebhook', 'license', 'subscription', 'usage',
   'reference', 'session', 'platform',
 ] as const;
@@ -80,6 +83,7 @@ function validateV2Arity(input: string, type: string, segments: string[]): void 
       if (segments.length !== 1) throw new UrnParseError(input, 'invalid-segment-shape');
       break;
     case 'apprun': // hrn:apprun:<root>:<app>:<run-id>
+    case 'worker': // hrn:worker:<root>:<app>:<worker-slug>
       if (segments.length !== 2) throw new UrnParseError(input, 'invalid-segment-shape');
       break;
     case 'noderev': // hrn:noderev:<root>:<mem>:<loc...>:<rev> — mem + >=1 loc atom + rev.
@@ -171,6 +175,17 @@ export function composeSecretUrnV2(root: string, name: string): string {
 /** Compose `hrn:apprun:<root>:<app>:<run-id>`. */
 export function composeAppRunUrnV2(root: string, app: string, runId: string): string {
   return composeUrnV2('apprun', root, app, runId);
+}
+
+/**
+ * Compose `hrn:worker:<root>:<app>:<worker-slug>` — a Worker, the named casting
+ * of an Agent into an App (`cor:dmo:050:11`). The leaf atom is the Worker's
+ * stored `slug` column, DERIVED from its name at cast time and iterated to
+ * uniqueness; it is never the display name, which carries no charset constraint
+ * and may collide after slugification (`cor:agt:020:02`).
+ */
+export function composeWorkerUrnV2(root: string, app: string, workerSlug: string): string {
+  return composeUrnV2('worker', root, app, workerSlug);
 }
 
 /**
