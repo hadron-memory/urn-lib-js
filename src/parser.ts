@@ -243,14 +243,28 @@ function tryParseFlatV2(input: string): ParsedUrn | null {
   }
   const mappedType = V2_TO_V1_TYPE[parsed.type];
   if (!mappedType) return null;
+  // A FRAGMENTED input is declined, not mapped (#994). `ParsedUrn` has no
+  // fragment field, so `hrn:node:acme.com:mem:loc#data` would come back as
+  // `type: 'node'` with `pathSegments` describing only the PARENT — the `#data`
+  // surviving nowhere but inside `parserCanonical`. A consumer dispatching on
+  // the documented structured fields, which is what the type is for, would then
+  // resolve or act on the parent node instead of its data resource. Under v1
+  // grammar `data` was its own type word, so this input dispatched distinctly.
+  //
+  // Declining sends it back to the v1 parser's error — a loud failure, exactly
+  // what it did before this delegation existed — rather than silently resolving
+  // to the wrong resource. Representing the fragment on `ParsedUrn` is the
+  // other candidate fix and matches where `cor:urn:010:01` is going, but it
+  // widens a v1-surface type that consumers destructure, so it wants its own
+  // decision rather than riding along with a bug fix.
+  if (parsed.fragment !== undefined) return null;
   const parserRewrites: AliasCategory[] = [];
   if (input.startsWith(`${LEGACY_SCHEME}:`)) parserRewrites.push('legacy-urn-scheme');
-  const frag = parsed.fragment !== undefined ? `#${parsed.fragment}` : '';
   const pathSegments = [parsed.root, ...parsed.segments];
   return {
     type: mappedType,
     pathSegments,
-    parserCanonical: `${CANONICAL_SCHEME}:${parsed.type}:${pathSegments.join(':')}${frag}`,
+    parserCanonical: `${CANONICAL_SCHEME}:${parsed.type}:${pathSegments.join(':')}`,
     inputForm: input,
     parserRewrites,
     needsResolverCanonicalization: false,
