@@ -14,6 +14,7 @@ export type UrnParseErrorReason =
   | 'slug-too-long' // a slug exceeds the FR-017 64-char limit
   | 'loc-segment-rejected' // URN contains a `loc:` segment (FR-021)
   | 'invalid-segment-shape' // a path-segment violates the FR-020 internal-`:` rules
+  | 'fragment-unsupported' // the URN's `#<fragment>` is not acceptable here (#11)
   | 'empty-bare-value' // formatCanonicalUrn called with empty bareValue
   | 'already-prefixed-bare-value' // formatCanonicalUrn bareValue starts with a scheme
   | 'org-urn-not-bare' // an org slug carried a scheme prefix or `:` separator (#376)
@@ -46,6 +47,8 @@ function messageFor(input: string, reason: UrnParseErrorReason, offending?: stri
       return `URN "${input}" contains a "loc:" segment. The "loc:" prefix is deprecated; rewrite the URN using the current grammar.`;
     case 'invalid-segment-shape':
       return `URN path-segment${cite} has the wrong number of ":"-separated parts for its position. See FR-020 internal-":" shape rules.`;
+    case 'fragment-unsupported':
+      return `URN "${input}" is valid apart from its fragment${cite}. The only registered fragment is "#data", and it may hang off a node or apprun URN only — a v1-grammar URN carries no fragment at all (v1 spells node-data as the "data" type word). Drop the fragment, or use parseUrnV2 if you need the parent type and fragment as separate fields.`;
     case 'empty-bare-value':
       return `formatCanonicalUrn called with empty bareValue. A bare URN value MUST contain at least one slug atom.`;
     case 'already-prefixed-bare-value':

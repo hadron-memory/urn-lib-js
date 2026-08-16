@@ -88,6 +88,19 @@ An edge loc is an **opaque terminal** — `splitEdgeUrn` never re-splits it into
 `source:target`. Use `parseUrnV2` when you want the v2 root / segments /
 fragment as separate fields.
 
+When a fragment is the **only** thing wrong with a URN, `parseUrn` says so with
+the `fragment-unsupported` reason rather than leaking the v1 parser's complaint
+about the `#` character:
+
+```ts
+parseUrn('hrn:node:acme.com:mem:loc#bogus');  // UrnParseError, reason 'fragment-unsupported'
+parseUrn('hrn:worker:acme.com:eng:iris#data'); // 'unknown-type' — worker has no v1 form either way
+```
+
+The test is whether removing the fragment would make the input parse. If it
+wouldn't, the original reason stands, so fixing what the error names always
+moves you forward.
+
 Both return `NodeLikeUrnParts` (node and edge share one shape). Under v1 the
 memory may be **multi-segment**, and the terminal `::` segment is the loc:
 
