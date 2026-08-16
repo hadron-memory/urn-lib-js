@@ -52,10 +52,10 @@ const V2_TYPE_SET: ReadonlySet<string> = new Set<string>(V2_URN_TYPES);
  * Fragment words valid on a v2 URN. v1 carried `data` as a standalone URN type;
  * v2 demotes it to a `#data` fragment hanging off its parent node/apprun (#696).
  */
-const V2_FRAGMENTS: ReadonlySet<string> = new Set<string>(['data']);
+export const V2_FRAGMENTS: ReadonlySet<string> = new Set<string>(['data']);
 
 /** The types a `#data` fragment may hang off (its parent). */
-const FRAGMENT_PARENT_TYPES: ReadonlySet<string> = new Set<string>(['node', 'apprun']);
+export const FRAGMENT_PARENT_TYPES: ReadonlySet<string> = new Set<string>(['node', 'apprun']);
 
 export interface ParsedUrnV2 {
   /** Always canonical `hrn` after parse (a legacy `urn:` scheme is normalized). */

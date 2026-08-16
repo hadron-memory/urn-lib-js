@@ -4,6 +4,7 @@
 
 import { UrnParseError } from './errors.js';
 import { hasSchemePrefix } from './scheme.js';
+import { V2_FRAGMENTS, FRAGMENT_PARENT_TYPES } from './v2.js';
 
 export type ExpectedUrnType =
   | 'org' | 'memory' | 'agent' | 'app' | 'node' | 'edge' | 'user' | 'secret';
@@ -106,20 +107,101 @@ export function assertFullyQualifiedUrn(input: string, expectedType: ExpectedUrn
 }
 
 /**
+ * The decomposition of a node or edge URN. `loc` is GRAMMAR-NORMALIZED: both
+ * `hrn:node:acme.com::specs::cor:urn` and `hrn:node:acme.com:specs:cor:urn`
+ * yield `cor:urn`, so a caller never has to know which grammar it was handed.
+ *
+ * This is the reason to prefer these decomposers over `ParsedUrn.pathSegments`,
+ * which is a RAW split whose shape follows the input grammar (#12).
+ */
+export interface NodeLikeUrnParts {
+  /** The bare memory URN — `<org>:<memorySlug>`, or the full path for a
+   * multi-segment memory (`<org>:<app>:<agent>:<role>`). */
+  memoryUrn: string;
+  /** The opaque loc within that memory, colon-joined. Never carries a fragment. */
+  loc: string;
+  /** Present only when the input carried a `#<fragment>` suffix (v2 `#data`). */
+  fragment?: string;
+}
+
+/**
+ * Split a fully-qualified node or edge URN. Shared by `splitNodeUrn` and
+ * `splitEdgeUrn` — node and edge have the same `<root>::<mem>::<loc...>` shape,
+ * and an edge loc is an opaque terminal (never re-split into `source:target`).
+ */
+function splitNodeLikeUrn(input: string, expectedType: 'node' | 'edge'): NodeLikeUrnParts {
+  // Strip an optional trailing `#<fragment>` FIRST (#13). v2 spells node-data as
+  // a `#data` fragment of its parent, and the decomposition below is purely
+  // positional — left in place the fragment would ride along into the terminal
+  // atom and produce `loc: 'cor:urn#data'`, which is not a loc: no memory
+  // contains it, `#` is outside the atom charset, and a caller using it as a
+  // lookup key gets a silent miss. The v1 spelling of the same resource
+  // (`hrn:data:<root>::<mem>::<loc>`) yields a clean loc, so folding the
+  // fragment in would make one resource decompose two different ways.
+  let fragment: string | undefined;
+  let urn = input;
+  const hashIdx = input.indexOf('#');
+  if (hashIdx !== -1) {
+    fragment = input.slice(hashIdx + 1);
+    urn = input.slice(0, hashIdx);
+    // Validate the fragment against the SAME rules `parseUrnV2` enforces, before
+    // stripping it. Otherwise these decomposers — which are self-validating by
+    // contract — would be more permissive than `parseUrn` for the same input,
+    // silently accepting `#bogus` (not a registered fragment word) or a fragment
+    // on an edge (only node/apprun may parent one) and handing back a clean loc.
+    if (!V2_FRAGMENTS.has(fragment) || !FRAGMENT_PARENT_TYPES.has(expectedType)) {
+      throw new UrnNotQualifiedError(input, undefined, expectedType);
+    }
+  }
+
+  assertFullyQualifiedUrn(urn, expectedType);
+
+  const prefixMatch = urn.match(QUAL_PREFIX_STRIP_RE);
+  const path = prefixMatch ? prefixMatch[1]! : urn;
+
+  // v1 hierarchy (`::`) vs flat v2 (single `:`) — and the two grammars put the
+  // memory/loc boundary in DIFFERENT places, so they can't share one rule:
+  //
+  //   v1: the TERMINAL `::` segment is the opaque loc and everything before it
+  //       is the memory path, which may be multi-segment
+  //       (`<org>::<app>::<agent>::<role>::<loc>` — see the parser, where only
+  //       the final segment is unbounded). Slicing a fixed two segments here
+  //       silently moved most of a multi-segment memory into the loc.
+  //   v2: `hrn:<type>:<root>:<mem>:<loc...>` — the memory is exactly ONE atom
+  //       after the root, and everything past it is the loc.
+  //
+  // Both still normalize to the same `loc` for the common 3-part case, which is
+  // the whole point of preferring these over `pathSegments`.
+  const isV1 = path.includes('::');
+  const parts = isV1 ? path.split('::') : path.split(':');
+  const out: NodeLikeUrnParts = isV1
+    ? {
+        memoryUrn: parts.slice(0, -1).join(':'),
+        loc: parts[parts.length - 1]!,
+      }
+    : {
+        memoryUrn: `${parts[0]!}:${parts[1]!}`,
+        loc: parts.slice(2).join(':'),
+      };
+  if (fragment !== undefined) out.fragment = fragment;
+  return out;
+}
+
+/**
  * Split a fully-qualified node URN into its memory URN and the loc within that
  * memory. Self-validating (calls `assertFullyQualifiedUrn(input, 'node')`).
- * The returned `memoryUrn` is the bare `<org>:<memorySlug>` form.
+ * The returned `memoryUrn` is the bare `<org>:<memorySlug>` form; a `#data`
+ * fragment is reported separately rather than folded into `loc` (#13).
  */
-export function splitNodeUrn(input: string): { memoryUrn: string; loc: string } {
-  assertFullyQualifiedUrn(input, 'node');
+export function splitNodeUrn(input: string): NodeLikeUrnParts {
+  return splitNodeLikeUrn(input, 'node');
+}
 
-  const prefixMatch = input.match(QUAL_PREFIX_STRIP_RE);
-  const path = prefixMatch ? prefixMatch[1]! : input;
-
-  if (path.includes('::')) {
-    const segments = path.split('::');
-    return { memoryUrn: `${segments[0]!}:${segments[1]!}`, loc: segments.slice(2).join(':') };
-  }
-  const atoms = path.split(':');
-  return { memoryUrn: `${atoms[0]!}:${atoms[1]!}`, loc: atoms.slice(2).join(':') };
+/**
+ * Split a fully-qualified edge URN into its memory URN and the loc within that
+ * memory (#12). Same shape as `splitNodeUrn` — the edge loc is an OPAQUE
+ * terminal and is never re-split into `source:target`.
+ */
+export function splitEdgeUrn(input: string): NodeLikeUrnParts {
+  return splitNodeLikeUrn(input, 'edge');
 }

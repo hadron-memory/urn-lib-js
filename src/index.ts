@@ -28,8 +28,10 @@ export type { ParsedUrn } from './parser.js';
 export {
   formatCanonicalUrn, composeNodeUrn, composeEdgeUrn, composeInstalledAgentUrn,
 } from './compose.js';
-export { assertFullyQualifiedUrn, splitNodeUrn, UrnNotQualifiedError } from './qualify.js';
-export type { ExpectedUrnType } from './qualify.js';
+export {
+  assertFullyQualifiedUrn, splitNodeUrn, splitEdgeUrn, UrnNotQualifiedError,
+} from './qualify.js';
+export type { ExpectedUrnType, NodeLikeUrnParts } from './qualify.js';
 export { parseFor } from './migrate.js';
 export type { UrnRow } from './migrate.js';
 export { DISPLAY_URN_TYPES, parseDisplayUrn } from './display.js';
@@ -37,7 +39,7 @@ export type { DisplayUrnType, DisplayParsedUrnType, ParsedDisplayUrn } from './d
 // Grammar v2 (flat, pool-rooted) — additive, coexists with the v1 surface (#694).
 // Per-entity shapes + typed compose/parse helpers land in #696.
 export {
-  V2_URN_TYPES, parseUrnV2, composeUrnV2, isFlatV2,
+  V2_URN_TYPES, V2_FRAGMENTS, FRAGMENT_PARENT_TYPES, parseUrnV2, composeUrnV2, isFlatV2,
   composeSecretUrnV2, composeAppRunUrnV2, composeWorkerUrnV2, composeNodeRevUrnV2,
   composeDataFragmentV2,
   parseNodeRevUrnV2,

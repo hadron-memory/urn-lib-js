@@ -59,6 +59,51 @@ Not yet ported (later increments, gated by the same corpus): legacy chain→flat
 **normalization** + the stored alias map (hadron-server#697) and the unified
 principal-**pool** enforcement (hadron-server#692).
 
+## Getting a loc: use the decomposers, not `pathSegments`
+
+`ParsedUrn.pathSegments` is a **raw split whose shape follows the input's
+grammar** (#12). v1 input is split on `::`, so a segment may carry an internal
+`:`; flat-v2 input is split on the single `:`, so every atom is its own element.
+The two spellings of one resource therefore differ:
+
+```ts
+parseUrn('hrn:node:acme.com::specs::cor:urn').pathSegments  // ['acme.com', 'specs', 'cor:urn']
+parseUrn('hrn:node:acme.com:specs:cor:urn').pathSegments    // ['acme.com', 'specs', 'cor', 'urn']
+```
+
+This affects every type whose v1 form permits an internal `:` inside a segment —
+`memory` (valued role markers like `app-user:<id>`), `node`, and `edge`. `org`,
+`user`, `agent`, `app`, `secret` and `asset` are identical under both grammars.
+
+`splitNodeUrn` / `splitEdgeUrn` normalize across grammars and report a `#data`
+fragment separately, so a caller never has to know which grammar it was handed:
+
+```ts
+splitNodeUrn('hrn:node:acme.com::specs::cor:urn');       // { memoryUrn: 'acme.com:specs', loc: 'cor:urn' }
+splitNodeUrn('hrn:node:acme.com:specs:cor:urn');         // { memoryUrn: 'acme.com:specs', loc: 'cor:urn' }
+splitNodeUrn('hrn:node:acme.com:specs:cor:urn#data');    // { …, loc: 'cor:urn', fragment: 'data' }
+```
+
+An edge loc is an **opaque terminal** — `splitEdgeUrn` never re-splits it into
+`source:target`. Use `parseUrnV2` when you want the v2 root / segments /
+fragment as separate fields.
+
+Both return `NodeLikeUrnParts` (node and edge share one shape). Under v1 the
+memory may be **multi-segment**, and the terminal `::` segment is the loc:
+
+```ts
+splitNodeUrn('hrn:node:mm.org::coding-app::coding-agent::app-mem::a:b');
+// { memoryUrn: 'mm.org:coding-app:coding-agent:app-mem', loc: 'a:b' }
+```
+
+Both are **self-validating**: they reject an unregistered fragment word and a
+fragment on an edge (only `node`/`apprun` may parent one), so they are never
+more permissive than `parseUrn` for the same input.
+
+**Known gap:** there is no `splitMemoryUrn` yet. v2 leaves `mem` arity
+unconstrained, so `hrn:mem:<root>:<a>:<b>:<c>` cannot be split into containers
+vs leaf until the v2 spec pins it (hadron-server#698).
+
 ## Usage
 
 ```ts
