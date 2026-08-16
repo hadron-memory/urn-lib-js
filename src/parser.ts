@@ -12,6 +12,27 @@ import { parseUrnV2 } from './v2.js';
 
 export interface ParsedUrn {
   type: CanonicalUrnType;
+  /**
+   * The RAW path split — **its shape follows the input's grammar** (#12).
+   *
+   * v1 input is split on `::`, so a segment may carry an internal `:`; flat-v2
+   * input is split on the single `:`, so every atom is its own element. The two
+   * spellings of one resource therefore differ:
+   *
+   * ```
+   * hrn:node:acme.com::specs::cor:urn   → ['acme.com', 'specs', 'cor:urn']
+   * hrn:node:acme.com:specs:cor:urn     → ['acme.com', 'specs', 'cor', 'urn']
+   * ```
+   *
+   * This bites every type whose v1 form permits an internal `:` inside a
+   * segment — `memory` (valued role markers like `app-user:<id>`), `node`, and
+   * `edge`. `org`, `user`, `agent`, `app`, `secret` and `asset` are identical
+   * under both grammars.
+   *
+   * **Don't index this to get a loc.** Use `splitNodeUrn` / `splitEdgeUrn`,
+   * which normalize across grammars (and report a `#data` fragment separately),
+   * or `parseUrnV2` when you want the v2 root/segments/fragment as fields.
+   */
   pathSegments: string[];
   parserCanonical: string;
   inputForm: string;

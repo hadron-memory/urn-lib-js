@@ -28,8 +28,10 @@ export type { ParsedUrn } from './parser.js';
 export {
   formatCanonicalUrn, composeNodeUrn, composeEdgeUrn, composeInstalledAgentUrn,
 } from './compose.js';
-export { assertFullyQualifiedUrn, splitNodeUrn, UrnNotQualifiedError } from './qualify.js';
-export type { ExpectedUrnType } from './qualify.js';
+export {
+  assertFullyQualifiedUrn, splitNodeUrn, splitEdgeUrn, UrnNotQualifiedError,
+} from './qualify.js';
+export type { ExpectedUrnType, NodeUrnParts } from './qualify.js';
 export { parseFor } from './migrate.js';
 export type { UrnRow } from './migrate.js';
 export { DISPLAY_URN_TYPES, parseDisplayUrn } from './display.js';
