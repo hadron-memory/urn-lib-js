@@ -4,7 +4,7 @@
 import { UrnParseError } from './errors.js';
 import { CANONICAL_SCHEME, LEGACY_SCHEME } from './scheme.js';
 import {
-  URN_TYPE_SET, NODE_URN_TYPES, TYPE_MARKERS, ROLE_MARKERS, RESERVED_SLUGS,
+  URN_TYPE_SET, NODE_URN_TYPES, NODE_PARTS, TYPE_MARKERS, ROLE_MARKERS, RESERVED_SLUGS,
   type CanonicalUrnType, type AliasCategory,
 } from './registry.js';
 import { validateAtomShape } from './slug.js';
@@ -226,6 +226,27 @@ const V2_TO_V1_TYPE: Readonly<Record<string, CanonicalUrnType>> = {
 };
 
 /**
+ * grammar-v2 fragment words that have a v1 canonical TYPE equivalent (#8).
+ *
+ * v2 demoted the v1 node-PART type words — the registry's `NODE_PARTS`, i.e.
+ * `data` and `condition` — from standalone types to `#<part>` fragments hanging
+ * off the parent node (#696). The demotion changed the SPELLING, not the
+ * meaning: v1's `hrn:data:<root>::<mem>::<loc>` and v2's
+ * `hrn:node:<root>:<mem>:<loc>#data` name the same resource, and v1's data URN
+ * carries exactly the parent node's path — only its type word differs. So the
+ * fragment maps back onto its v1 type word for `.type` dispatch, precisely as
+ * `mem` maps onto `memory` above.
+ *
+ * This is what makes the delegation SAFE for fragmented input: a consumer
+ * switching on `.type` lands in the `case 'data'` arm it has always had for the
+ * v1 spelling, instead of the parent's `case 'node'` arm (the #994 harm).
+ * Derived from `NODE_PARTS` so the two registries cannot drift.
+ */
+const V2_FRAGMENT_TO_V1_TYPE: ReadonlyMap<string, CanonicalUrnType> = new Map(
+  NODE_PARTS.map((part) => [part, part] as const),
+);
+
+/**
  * Delegate a v1-rejected input to the grammar-v2 flat parser (#697). Returns a
  * `ParsedUrn` when `input` is a flat-v2 URN of a type with a v1 equivalent,
  * else `null` (so `parseUrn` rethrows the original v1 error). The `.type` field
@@ -233,6 +254,11 @@ const V2_TO_V1_TYPE: Readonly<Record<string, CanonicalUrnType>> = {
  * `.parserCanonical` keeps the actual v2 type word so the canonical string is a
  * valid, round-tripping v2 URN. v2 is already flat/pool-rooted, so no D11
  * resolver canonicalization applies.
+ *
+ * A FRAGMENTED input maps its fragment onto the fragment's v1 type word (#8):
+ * `hrn:node:<root>:<mem>:<loc>#data` parses as `type: 'data'` over the same
+ * path, which is exactly the v1 `hrn:data:<root>::<mem>::<loc>` reading. The
+ * fragment stays in `parserCanonical` so the canonical string round-trips.
  */
 function tryParseFlatV2(input: string): ParsedUrn | null {
   let parsed;
@@ -243,28 +269,39 @@ function tryParseFlatV2(input: string): ParsedUrn | null {
   }
   const mappedType = V2_TO_V1_TYPE[parsed.type];
   if (!mappedType) return null;
-  // A FRAGMENTED input is declined, not mapped (#994). `ParsedUrn` has no
-  // fragment field, so `hrn:node:acme.com:mem:loc#data` would come back as
-  // `type: 'node'` with `pathSegments` describing only the PARENT — the `#data`
-  // surviving nowhere but inside `parserCanonical`. A consumer dispatching on
-  // the documented structured fields, which is what the type is for, would then
-  // resolve or act on the parent node instead of its data resource. Under v1
-  // grammar `data` was its own type word, so this input dispatched distinctly.
+
+  // Resolve the effective v1 type word. For a fragmented input that is the
+  // FRAGMENT's v1 type word, not the parent's: v2 spells node-data as a `#data`
+  // fragment of its node, v1 spelled it as the `data` type over the same path,
+  // and both name the same resource (#696 demoted the type word to a fragment).
   //
-  // Declining sends it back to the v1 parser's error — a loud failure, exactly
-  // what it did before this delegation existed — rather than silently resolving
-  // to the wrong resource. Representing the fragment on `ParsedUrn` is the
-  // other candidate fix and matches where `cor:urn:010:01` is going, but it
-  // widens a v1-surface type that consumers destructure, so it wants its own
-  // decision rather than riding along with a bug fix.
-  if (parsed.fragment !== undefined) return null;
+  // Mapping it this way is what keeps the delegation from re-introducing #994:
+  // reporting `type: 'node'` here would send a consumer dispatching on the
+  // structured fields to the PARENT node instead of its data resource. With the
+  // fragment mapped, that consumer lands in the same `case 'data'` arm it has
+  // always had for the v1 spelling. A fragment with no v1 type word (none today
+  // — `V2_FRAGMENTS` is `{data}`) is declined rather than silently flattened.
+  //
+  // A fragment on a v2-ONLY parent (`hrn:apprun:…#data`) never reaches here: its
+  // parent type has no `V2_TO_V1_TYPE` entry, so it keeps its v1 unknown-type
+  // error like every other v2-only type.
+  let type = mappedType;
+  let fragmentSuffix = '';
+  if (parsed.fragment !== undefined) {
+    const fragmentType = V2_FRAGMENT_TO_V1_TYPE.get(parsed.fragment);
+    if (fragmentType === undefined) return null;
+    type = fragmentType;
+    fragmentSuffix = `#${parsed.fragment}`;
+  }
+
   const parserRewrites: AliasCategory[] = [];
   if (input.startsWith(`${LEGACY_SCHEME}:`)) parserRewrites.push('legacy-urn-scheme');
   const pathSegments = [parsed.root, ...parsed.segments];
   return {
-    type: mappedType,
+    type,
     pathSegments,
-    parserCanonical: `${CANONICAL_SCHEME}:${parsed.type}:${pathSegments.join(':')}`,
+    parserCanonical:
+      `${CANONICAL_SCHEME}:${parsed.type}:${pathSegments.join(':')}${fragmentSuffix}`,
     inputForm: input,
     parserRewrites,
     needsResolverCanonicalization: false,
