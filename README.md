@@ -42,6 +42,16 @@ ported too:
   its parent, not a standalone type). `composeDataFragmentV2` always emits a
   canonical `hrn:` URN, even from a legacy `urn:`-scheme parent.
 
+`#696` demoted the v1 node-**part** type words (`data`, `condition`) to
+fragments. That changed the spelling, not the meaning — so `parseUrn` maps a
+fragmented flat-v2 URN onto the fragment's v1 type word:
+`hrn:node:<root>:<mem>:<loc>#data` parses as `type: 'data'` over the parent's
+path, which is exactly the v1 `hrn:data:<root>::<mem>::<loc>` reading of the
+same resource. `parserCanonical` keeps the v2 form (fragment included), so it
+round-trips. A fragment on a v2-**only** parent (`apprun`, `worker`) has no v1
+type equivalent and keeps its `unknown-type` error; reach for `parseUrnV2` when
+you need the parent type and fragment as separate fields.
+
 Typed helpers: `composeSecretUrnV2`, `composeAppRunUrnV2`, `composeNodeRevUrnV2`,
 `composeDataFragmentV2`, and `parseNodeRevUrnV2`.
 
@@ -71,6 +81,9 @@ the expected `UrnParseError.reason`, and neither means a `void` call that must
 not throw. `test/corpus.test.ts` runs every case against this implementation;
 `urn-lib-go` runs the identical file. **Add behavior by adding a corpus case,
 not by editing a test in one language.**
+
+**npm is the package manager of record.** `package-lock.json` is the only
+lockfile in the tree — don't add a second one.
 
 ```bash
 npm install
