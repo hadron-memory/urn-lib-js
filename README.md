@@ -88,6 +88,18 @@ An edge loc is an **opaque terminal** — `splitEdgeUrn` never re-splits it into
 `source:target`. Use `parseUrnV2` when you want the v2 root / segments /
 fragment as separate fields.
 
+Both return `NodeLikeUrnParts` (node and edge share one shape). Under v1 the
+memory may be **multi-segment**, and the terminal `::` segment is the loc:
+
+```ts
+splitNodeUrn('hrn:node:mm.org::coding-app::coding-agent::app-mem::a:b');
+// { memoryUrn: 'mm.org:coding-app:coding-agent:app-mem', loc: 'a:b' }
+```
+
+Both are **self-validating**: they reject an unregistered fragment word and a
+fragment on an edge (only `node`/`apprun` may parent one), so they are never
+more permissive than `parseUrn` for the same input.
+
 **Known gap:** there is no `splitMemoryUrn` yet. v2 leaves `mem` arity
 unconstrained, so `hrn:mem:<root>:<a>:<b>:<c>` cannot be split into containers
 vs leaf until the v2 spec pins it (hadron-server#698).
