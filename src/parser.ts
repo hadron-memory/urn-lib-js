@@ -346,9 +346,41 @@ export function parseUrn(input: string): ParsedUrn {
     if (err instanceof UrnParseError) {
       const v2 = tryParseFlatV2(input);
       if (v2) return v2;
+      const fragmentErr = fragmentOnlyFailure(input);
+      if (fragmentErr) throw fragmentErr;
     }
     throw err;
   }
+}
+
+/**
+ * When a rejected input carries a `#<fragment>`, decide whether the fragment is
+ * the ONLY thing wrong with it — and if so, say that instead of leaking the v1
+ * parser's error (#11).
+ *
+ * The v1 grammar has no concept of a fragment, so its complaint is always about
+ * the `#` CHARACTER (`invalid-charset`) or about a v2 type word it doesn't know
+ * (`unknown-type`). Both are true internally and both mislead: they describe a
+ * symptom of the surface, not the defect in the URN.
+ *
+ * The discriminator is whether removing the fragment makes the input parse. If
+ * it does, the fragment is the whole problem and `fragment-unsupported` names it
+ * exactly. If it doesn't — `hrn:worker:…#data`, `hrn:apprun:…#data`, whose type
+ * words have no v1 equivalent at all — then the original error stands, because
+ * fixing the fragment alone would NOT make the URN parse and reporting it would
+ * send the caller down the wrong path.
+ */
+function fragmentOnlyFailure(input: string): UrnParseError | null {
+  const hashIdx = input.indexOf('#');
+  if (hashIdx === -1) return null;
+  const core = input.slice(0, hashIdx);
+  try {
+    // `core` cannot contain a `#`, so this never recurses back into this branch.
+    parseUrn(core);
+  } catch {
+    return null; // the input is broken with or without its fragment
+  }
+  return new UrnParseError(input, 'fragment-unsupported', `#${input.slice(hashIdx + 1)}`);
 }
 
 /** The v1-grammar parser (spec 021). See `parseUrn` for the v2 delegation wrapper. */
