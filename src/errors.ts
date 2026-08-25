@@ -48,7 +48,7 @@ function messageFor(input: string, reason: UrnParseErrorReason, offending?: stri
     case 'invalid-segment-shape':
       return `URN path-segment${cite} has the wrong number of ":"-separated parts for its position. See FR-020 internal-":" shape rules.`;
     case 'fragment-unsupported':
-      return `URN "${input}" is valid apart from its fragment${cite}. The only registered fragment is "#data", and it may hang off a node or apprun URN only — a v1-grammar URN carries no fragment at all (v1 spells node-data as the "data" type word). Drop the fragment, or use parseUrnV2 if you need the parent type and fragment as separate fields.`;
+      return `URN "${input}" is valid apart from its fragment${cite}. The only registered fragment is "#data", and it may hang off a node or apprun URN only — a v1-grammar URN carries no fragment at all (v1 spells node-data as the "data" type word). Drop the fragment. (parseUrnV2 is the parser that returns the parent type and fragment as separate fields, but it rejects this input too — it needs a flat-v2 node or apprun URN carrying "#data".)`;
     case 'empty-bare-value':
       return `formatCanonicalUrn called with empty bareValue. A bare URN value MUST contain at least one slug atom.`;
     case 'already-prefixed-bare-value':
