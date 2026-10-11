@@ -18,7 +18,7 @@ import { CANONICAL_SCHEME, hasSchemePrefix } from './scheme.js';
  * registration visually obvious rather than silently mislabeling a chip.
  */
 export const DISPLAY_URN_TYPES = [
-  'org', 'memory', 'agent', 'app', 'node', 'user', 'apprun', 'worker',
+  'org', 'memory', 'agent', 'app', 'node', 'user', 'apprun', 'worker', 'ticker', 'agenttask',
 ] as const;
 
 /** A registered display kind. */

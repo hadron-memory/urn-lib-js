@@ -57,6 +57,8 @@ const FNS: Record<string, (a: string[]) => unknown> = {
   isFlatV2: (a) => urn.isFlatV2(a[0]!),
   composeSecretUrnV2: (a) => urn.composeSecretUrnV2(a[0]!, a[1]!),
   composeAppRunUrnV2: (a) => urn.composeAppRunUrnV2(a[0]!, a[1]!, a[2]!),
+  composeTickerUrnV2: (a) => urn.composeTickerUrnV2(a[0]!, a[1]!, a[2]!),
+  composeAgentTaskUrnV2: (a) => urn.composeAgentTaskUrnV2(a[0]!, a[1]!, a[2]!),
   composeWorkerUrnV2: (a) => urn.composeWorkerUrnV2(a[0]!, a[1]!, a[2]!),
   composeNodeRevUrnV2: (a) => urn.composeNodeRevUrnV2(a[0]!, a[1]!, a[2]!, a[3]!),
   composeDataFragmentV2: (a) => urn.composeDataFragmentV2(a[0]!),

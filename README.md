@@ -152,3 +152,12 @@ npm run build
 ## License
 
 MIT © Baragaun, Inc.
+
+## Tickers and agent tasks (grammar v2)
+
+`hrn:ticker:<root>:<app-slug>:<ticker-slug>` and
+`hrn:agenttask:<root>:<app-slug>:<task-id>` each have exactly two segments after
+the root. Use `composeTickerUrnV2` with the ticker's permanent derived slug and
+`composeAgentTaskUrnV2` with the task's id. Both parse through `parseUrnV2`,
+render their own display badge, and normalize a legacy `urn:` prefix to `hrn:`.
+They have no v1 equivalent; `parseUrn` rejects them with `unknown-type`.
