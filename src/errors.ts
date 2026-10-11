@@ -18,7 +18,7 @@ export type UrnParseErrorReason =
   | 'empty-bare-value' // formatCanonicalUrn called with empty bareValue
   | 'already-prefixed-bare-value' // formatCanonicalUrn bareValue starts with a scheme
   | 'org-urn-not-bare' // an org slug carried a scheme prefix or `:` separator (#376)
-  | 'org-root-not-dotted' // a NEW org root lacks a dot (must be a domain; #692 registration policy)
+  | 'root-id-shaped' // a NEW org root or user handle matches the platform's ID lookup shape
   | 'handle-has-dot' // a NEW user handle contains a dot (handles are dot-free; #692 registration policy)
   | 'empty-derived-slug'; // a display name slugified to nothing usable (#574)
 
@@ -55,10 +55,10 @@ function messageFor(input: string, reason: UrnParseErrorReason, offending?: stri
       return `formatCanonicalUrn bareValue${cite} starts with a scheme prefix ("hrn:" or "urn:"). Pass the bare value (no "hrn:<type>:" prefix); the wrapper composes the prefix itself.`;
     case 'org-urn-not-bare':
       return `Organization URN "${input}" must be a bare slug — no scheme prefix ("hrn:"/"urn:") and no ":" separator. The Organization.urn field returns the canonical "hrn:org:<slug>" form on read; submit only the bare "<slug>" (e.g. "acme.com").`;
-    case 'org-root-not-dotted':
-      return `Organization root${cite} must be a dotted domain (contain at least one "."), e.g. "acme.com". Bare/undotted org names are no longer accepted (#692); the root pool reserves dotted roots for domain-verified organizations.`;
+    case 'root-id-shaped':
+      return `Root "${input}" cannot look like an entity ID (32 hex characters, or "c" plus 24 lowercase letters and digits). Pick a different name.`;
     case 'handle-has-dot':
-      return `User handle${cite} must not contain a "." — handles are dot-free so they stay distinct from dotted org roots in the shared principal pool (#692).`;
+      return `User handle${cite} must not contain a "." — new handles remain dot-free under the registration policy.`;
     case 'empty-derived-slug':
       return `Cannot derive a URN slug from "${input}" — it has no letters or digits. Choose a name with at least one alphanumeric character.`;
   }

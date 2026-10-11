@@ -49,35 +49,34 @@ export function validateUserSlug(slug: string): void {
   }
 }
 
+/** Registration-only root policy (cor:urn:010:01); parse/compose stay lenient. */
+function validatePrincipalRoot(root: string): void {
+  // Scheme words are reserved only as roots, not as generic resource slugs.
+  if (root.toLowerCase() === 'hrn' || root.toLowerCase() === 'urn') {
+    throw new UrnParseError(root, 'reserved-word-slug', root);
+  }
+  validateUserSlug(root);
+  // Exactly the ID shapes the server's entityRef/shape.ts dispatches as ids.
+  if (/^[0-9a-f]{32}$/.test(root) || /^c[a-z0-9]{24}$/.test(root)) {
+    throw new UrnParseError(root, 'root-id-shaped', root);
+  }
+}
+
 /**
- * Validate an organization slug at create/rename boundaries (#376, #692). An org
- * URN stores the BARE slug and must never itself contain a `:` (the prefix-boundary
- * invariant the rename cascade relies on), so a scheme prefix or `:` is rejected
- * up front; everything else reuses the shared slug rules. A **NEW** org root must
- * additionally be a **dotted domain** (#692 registration policy — dotted roots are
- * domain-verifiable and stay charset-disjoint from dot-free user handles in the
- * shared principal pool). This is a create/rename rule, NOT a parse rule: existing
- * undotted org roots still resolve on the read path.
+ * Validate an org root at create/rename: bare, legal lowercase atom, neither
+ * reserved nor ID-shaped. A dot has no meaning; dotted and undotted names are
+ * admitted. Existing URNs remain readable through the lenient parse path.
  */
 export function validateOrgSlug(slug: string): void {
   if (hasSchemePrefix(slug) || slug.includes(':')) {
     throw new UrnParseError(slug, 'org-urn-not-bare', slug);
   }
-  validateUserSlug(slug);
-  if (!slug.includes('.')) {
-    throw new UrnParseError(slug, 'org-root-not-dotted', slug);
-  }
+  validatePrincipalRoot(slug);
 }
 
-/**
- * Validate a user handle at create/rename boundaries (#692). A handle is a
- * `validateUserSlug` slug that additionally must be **dot-free** — so it stays
- * charset-disjoint from a dotted org root in the shared principal pool (an org
- * root is a domain, a handle is not). Registration policy, not a parse rule:
- * pre-existing dotted handles still resolve on the read path.
- */
+/** Validate a new user handle: the root policy above, plus the existing dot-free rule. */
 export function validateUserHandle(handle: string): void {
-  validateUserSlug(handle);
+  validatePrincipalRoot(handle);
   if (handle.includes('.')) {
     throw new UrnParseError(handle, 'handle-has-dot', handle);
   }
