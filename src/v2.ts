@@ -39,7 +39,7 @@ import { validateAtomShape } from './slug.js';
  */
 export const V2_URN_TYPES = [
   'org', 'user', 'mem', 'agent', 'app', 'node', 'edge', 'asset', 'secret',
-  'apprun', 'worker', 'noderev', 'appkey', 'aiconf', 'tool', 'server', 'userapikey',
+  'apprun', 'worker', 'ticker', 'agenttask', 'noderev', 'appkey', 'aiconf', 'tool', 'server', 'userapikey',
   'agentschedule', 'agentwebhook', 'license', 'subscription', 'usage',
   'reference', 'session', 'platform',
 ] as const;
@@ -84,6 +84,8 @@ function validateV2Arity(input: string, type: string, segments: string[]): void 
       break;
     case 'apprun': // hrn:apprun:<root>:<app>:<run-id>
     case 'worker': // hrn:worker:<root>:<app>:<worker-slug>
+    case 'ticker': // hrn:ticker:<root>:<app>:<ticker-slug>
+    case 'agenttask': // hrn:agenttask:<root>:<app>:<task-id>
       if (segments.length !== 2) throw new UrnParseError(input, 'invalid-segment-shape');
       break;
     case 'noderev': // hrn:noderev:<root>:<mem>:<loc...>:<rev> — mem + >=1 loc atom + rev.
@@ -186,6 +188,16 @@ export function composeAppRunUrnV2(root: string, app: string, runId: string): st
  */
 export function composeWorkerUrnV2(root: string, app: string, workerSlug: string): string {
   return composeUrnV2('worker', root, app, workerSlug);
+}
+
+/** Compose `hrn:ticker:<root>:<app>:<ticker-slug>` using the permanent derived slug. */
+export function composeTickerUrnV2(root: string, app: string, tickerSlug: string): string {
+  return composeUrnV2('ticker', root, app, tickerSlug);
+}
+
+/** Compose `hrn:agenttask:<root>:<app>:<task-id>` using the task's id. */
+export function composeAgentTaskUrnV2(root: string, app: string, taskId: string): string {
+  return composeUrnV2('agenttask', root, app, taskId);
 }
 
 /**
