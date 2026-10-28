@@ -39,7 +39,7 @@ import { validateAtomShape } from './slug.js';
  */
 export const V2_URN_TYPES = [
   'org', 'user', 'mem', 'agent', 'app', 'node', 'edge', 'asset', 'secret',
-  'apprun', 'worker', 'ticker', 'agenttask', 'noderev', 'appkey', 'aiconf', 'tool', 'server', 'userapikey',
+  'apprun', 'worker', 'ticker', 'agenttask', 'action', 'noderev', 'appkey', 'aiconf', 'tool', 'server', 'userapikey',
   'agentschedule', 'agentwebhook', 'license', 'subscription', 'usage',
   'reference', 'session', 'platform',
 ] as const;
@@ -86,6 +86,7 @@ function validateV2Arity(input: string, type: string, segments: string[]): void 
     case 'worker': // hrn:worker:<root>:<app>:<worker-slug>
     case 'ticker': // hrn:ticker:<root>:<app>:<ticker-slug>
     case 'agenttask': // hrn:agenttask:<root>:<app>:<task-id>
+    case 'action': // hrn:action:<root>:<agent-slug>:<code>
       if (segments.length !== 2) throw new UrnParseError(input, 'invalid-segment-shape');
       break;
     case 'noderev': // hrn:noderev:<root>:<mem>:<loc...>:<rev> — mem + >=1 loc atom + rev.
@@ -198,6 +199,11 @@ export function composeTickerUrnV2(root: string, app: string, tickerSlug: string
 /** Compose `hrn:agenttask:<root>:<app>:<task-id>` using the task's id. */
 export function composeAgentTaskUrnV2(root: string, app: string, taskId: string): string {
   return composeUrnV2('agenttask', root, app, taskId);
+}
+
+/** Compose `hrn:action:<root>:<agent-slug>:<code>`, keyed on the Team Agent (cor:urn:010:01). */
+export function composeActionUrnV2(root: string, agentSlug: string, code: string): string {
+  return composeUrnV2('action', root, agentSlug, code);
 }
 
 /**

@@ -41,7 +41,7 @@ export type { DisplayUrnType, DisplayParsedUrnType, ParsedDisplayUrn } from './d
 export {
   V2_URN_TYPES, V2_FRAGMENTS, FRAGMENT_PARENT_TYPES, parseUrnV2, composeUrnV2, isFlatV2,
   composeSecretUrnV2, composeAppRunUrnV2, composeWorkerUrnV2,
-  composeTickerUrnV2, composeAgentTaskUrnV2, composeNodeRevUrnV2,
+  composeTickerUrnV2, composeAgentTaskUrnV2, composeActionUrnV2, composeNodeRevUrnV2,
   composeDataFragmentV2,
   parseNodeRevUrnV2,
 } from './v2.js';
