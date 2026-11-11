@@ -51,8 +51,12 @@ export function validateUserSlug(slug: string): void {
 
 /** Registration-only root policy (cor:urn:010:01); parse/compose stay lenient. */
 function validatePrincipalRoot(root: string): void {
-  // Scheme words are reserved only as roots, not as generic resource slugs.
-  if (root.toLowerCase() === 'hrn' || root.toLowerCase() === 'urn') {
+  // Scheme words and the platform's own reserved roots (cor:urn:010:01 R3) are
+  // reserved only as roots, not as generic resource slugs. Matched case-insensitively
+  // and BEFORE the lowercase rule, so `SERVER` reports reserved-word-slug rather
+  // than a slug-not-lowercase error that suggests the reserved word.
+  const folded = root.toLowerCase();
+  if (folded === 'hrn' || folded === 'urn' || folded === 'server' || folded === 'platform') {
     throw new UrnParseError(root, 'reserved-word-slug', root);
   }
   validateUserSlug(root);
