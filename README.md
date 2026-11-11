@@ -183,6 +183,20 @@ equivalent; `parseUrn` rejects it with `unknown-type`. Both segments follow the
 shared URN atom rule (letters/digits, dots, underscores and hyphens, at most 64
 characters).
 
+## AI service configs (grammar v2)
+
+`hrn:aiconf:<owner-root>:<owner-kind>[:<owner-slug>]:<name>`: the owner kind
+(an exact, lowercase first segment) decides the shape (cor:urn:010:01). `org`
+takes `org:<name>` (`hrn:aiconf:acme.com:org:default`); `app` and `agent` take
+`<kind>:<owner-slug>:<name>` (`hrn:aiconf:acme.com:app:mealplan:default`). Any
+other kind is refused as `invalid-segment-shape`, `server` included: a
+HadronServer owner has no URN form, so the lib builds nothing for it. Under the
+reserved roots `server` and `platform` the config takes exactly one part, the
+name (`hrn:aiconf:server:default`); no owner kind follows. A name is one atom
+under the ordinary rule, so one ending in `-` or `_` is refused. Build with
+`composeUrnV2('aiconf', root, ...parts)`. The lib checks shape only: whether the
+kind matches the config's real owner is resolution (hadron-server#3857).
+
 ## License
 
 MIT © Baragaun, Inc.
