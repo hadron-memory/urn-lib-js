@@ -119,7 +119,9 @@ const RESERVED_ROOTS: ReadonlySet<string> = new Set<string>(['server', 'platform
  */
 function validateAiConfArity(input: string, root: string, segments: string[]): void {
   const bad = () => new UrnParseError(input, 'invalid-segment-shape');
-  if (RESERVED_ROOTS.has(root)) {
+  // R3: server/platform are matched case-insensitively (atoms allow uppercase),
+  // while the owner-kind words below stay an exact lowercase match.
+  if (RESERVED_ROOTS.has(root.toLowerCase())) {
     if (segments.length !== 1) throw bad();
     return;
   }
