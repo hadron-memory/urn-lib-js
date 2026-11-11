@@ -162,6 +162,16 @@ Task ids follow the shared URN atom rule (letters/digits, dots, underscores and
 hyphens, at most 64 characters). A 32-hex or cuid id is valid in the task-id
 leaf; root-name registration restrictions do not apply to that leaf.
 
+## App events (grammar v2)
+
+`hrn:appevent:<root>:<app-slug>:<event-id>` addresses one event in an App's event
+stream (cor:urn:010:01). It has exactly two segments after the root, like
+`hrn:agenttask`. Use `composeAppEventUrnV2` with the event's id. It parses
+through `parseUrnV2`, renders its own display badge, normalizes a legacy `urn:`
+prefix to `hrn:`, and refuses a `#data` fragment. It is v2-only: `parseUrn`
+rejects it with `unknown-type`. The event id is one URN atom (letters/digits,
+dots, underscores and hyphens, at most 64 characters).
+
 ## Root registration policy
 
 `validateOrgSlug` admits dotted and undotted organization names. Both it and

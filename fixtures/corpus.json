@@ -5128,7 +5128,7 @@
       "in": [
         "hrn:appevent:acme.com:eng-team:"
       ],
-      "throws": "malformed-grammar"
+      "throws": "invalid-segment-shape"
     },
     {
       "fn": "parseUrnV2",
