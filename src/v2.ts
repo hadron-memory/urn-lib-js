@@ -77,7 +77,7 @@ const V2_PREFIX_RE = /^(hrn|urn):([a-z][a-z0-9-]*):(.+)$/;
  * keep the leaf-unbounded generic form (their loc is an opaque terminal of one
  * or more atoms). Throws `UrnParseError('invalid-segment-shape')` on a mismatch.
  */
-function validateV2Arity(input: string, type: string, segments: string[]): void {
+function validateV2Arity(input: string, type: string, segments: string[], root: string): void {
   switch (type) {
     case 'secret': // hrn:secret:<root>:<name> — exactly one name atom (org/user root).
       if (segments.length !== 1) throw new UrnParseError(input, 'invalid-segment-shape');
@@ -96,8 +96,43 @@ function validateV2Arity(input: string, type: string, segments: string[]): void 
     case 'edge': // hrn:edge:<root>:<mem>:<loc...> — the loc is an opaque terminal.
       if (segments.length < 2) throw new UrnParseError(input, 'invalid-segment-shape');
       break;
+    case 'aiconf': // hrn:aiconf:<root>:<owner-kind>[:<owner-slug>]:<name> — the kind word decides (below).
+      validateAiConfArity(input, root, segments);
+      break;
     default:
       break;
+  }
+}
+
+/** Reserved roots (cor:urn:010:01 R3): no principal owns them; they name platform-level things. */
+const RESERVED_ROOTS: ReadonlySet<string> = new Set<string>(['server', 'platform']);
+
+/**
+ * `aiconf` arity (urn-lib-js#29, cor:urn:010:01 r59 V60-V63). Under a reserved
+ * root the config is server/platform-level: exactly ONE part, the name, and no
+ * owner kind (`hrn:aiconf:server:default`). Under an ordinary root the owner
+ * kind (an exact, lowercase match on the first segment) fixes the arity: `org`
+ * takes `org:<name>`, `app` and `agent` take `<kind>:<owner-slug>:<name>`. Any
+ * other first segment is refused, `server` included: a HadronServer owner has
+ * no URN form. Whether the kind matches the config's real owner is resolution
+ * (hadron-server#3857), not shape.
+ */
+function validateAiConfArity(input: string, root: string, segments: string[]): void {
+  const bad = () => new UrnParseError(input, 'invalid-segment-shape');
+  if (RESERVED_ROOTS.has(root)) {
+    if (segments.length !== 1) throw bad();
+    return;
+  }
+  switch (segments[0]) {
+    case 'org':
+      if (segments.length !== 2) throw bad();
+      return;
+    case 'app':
+    case 'agent':
+      if (segments.length !== 3) throw bad();
+      return;
+    default:
+      throw bad();
   }
 }
 
@@ -129,7 +164,7 @@ export function parseUrnV2(input: string): ParsedUrnV2 {
   // the atom charset) and any empty atom (leading/trailing/doubled colon).
   for (const atom of atoms) validateAtomShape(input, atom);
   const [root, ...segments] = atoms;
-  validateV2Arity(input, type, segments);
+  validateV2Arity(input, type, segments, root!);
   // A fragment may only hang off its parent type (node / apprun).
   if (fragment !== undefined && !FRAGMENT_PARENT_TYPES.has(type)) {
     throw new UrnParseError(input, 'invalid-segment-shape', `#${fragment}`);
@@ -151,7 +186,7 @@ export function composeUrnV2(type: string, root: string, ...segments: string[]):
   const urn = `${CANONICAL_SCHEME}:${type}:${[root, ...segments].join(':')}`;
   // Validate arity against the FULL composed URN so a thrown error's `input`
   // reflects what the caller asked for (not a truncated prefix).
-  validateV2Arity(urn, type, segments);
+  validateV2Arity(urn, type, segments, root);
   return urn;
 }
 
