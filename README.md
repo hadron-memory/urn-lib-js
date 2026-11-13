@@ -172,6 +172,20 @@ prefix to `hrn:`, and refuses a `#data` fragment. It is v2-only: `parseUrn`
 rejects it with `unknown-type`. The event id is one URN atom (letters/digits,
 dots, underscores and hyphens, at most 64 characters).
 
+## Grants (grammar v2)
+
+`hrn:grant:<root>:<app-slug>:<grant-id>` addresses one grant in an App
+(cor:urn:010:01, Grant row; ruling 0255 item 9). It has exactly two segments
+after the root, like `hrn:appevent`, with the App slug as the container and the
+grant's id as the leaf. Use `composeGrantUrnV2` with the grant's id. It parses
+through `parseUrnV2`, renders its own display badge, normalizes a legacy `urn:`
+prefix to `hrn:`, and refuses a `#data` fragment. The grant id is one ordinary
+URN atom (letters/digits, dots, underscores and hyphens, at most 64
+characters); there is no UUID-only rule. No other arity is defined, so an
+org-wide grant has no URN here. Today `parseUrn` (v1) rejects `hrn:grant` with
+`unknown-type`; that is current behaviour, not a ruled rejection (grant being
+greenfield v2-only is still Proposed in cor:urn:010:01).
+
 ## Root registration policy
 
 `validateOrgSlug` admits dotted and undotted organization names. Both it and

@@ -39,7 +39,7 @@ import { validateAtomShape } from './slug.js';
  */
 export const V2_URN_TYPES = [
   'org', 'user', 'mem', 'agent', 'app', 'node', 'edge', 'asset', 'secret',
-  'apprun', 'worker', 'ticker', 'agenttask', 'appevent', 'action', 'noderev', 'appkey', 'aiconf', 'tool', 'server', 'userapikey',
+  'apprun', 'worker', 'ticker', 'agenttask', 'appevent', 'grant', 'action', 'noderev', 'appkey', 'aiconf', 'tool', 'server', 'userapikey',
   'agentschedule', 'agentwebhook', 'license', 'subscription', 'usage',
   'reference', 'session', 'platform',
 ] as const;
@@ -87,6 +87,7 @@ function validateV2Arity(input: string, type: string, segments: string[], root: 
     case 'ticker': // hrn:ticker:<root>:<app>:<ticker-slug>
     case 'agenttask': // hrn:agenttask:<root>:<app>:<task-id>
     case 'appevent': // hrn:appevent:<root>:<app>:<event-id>
+    case 'grant': // hrn:grant:<root>:<app>:<grant-id>
     case 'action': // hrn:action:<root>:<agent-slug>:<code>
       if (segments.length !== 2) throw new UrnParseError(input, 'invalid-segment-shape');
       break;
@@ -242,6 +243,11 @@ export function composeAgentTaskUrnV2(root: string, app: string, taskId: string)
 /** Compose `hrn:appevent:<root>:<app>:<event-id>` using the event's id (cor:urn:010:01, App event). */
 export function composeAppEventUrnV2(root: string, app: string, eventId: string): string {
   return composeUrnV2('appevent', root, app, eventId);
+}
+
+/** Compose `hrn:grant:<root>:<app>:<grant-id>` using the grant's id (cor:urn:010:01 Grant row, ruling 0255 item 9). */
+export function composeGrantUrnV2(root: string, app: string, grantId: string): string {
+  return composeUrnV2('grant', root, app, grantId);
 }
 
 /** Compose `hrn:action:<root>:<agent-slug>:<code>`, keyed on the Team Agent (cor:urn:010:01). */
