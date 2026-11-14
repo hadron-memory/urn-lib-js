@@ -238,20 +238,23 @@ export function composeAppSecretUrnV2(root: string, appSlug: string, name: strin
   return composeUrnV2('secret', root, 'app', appSlug, name);
 }
 
-/** The typed owner of a v2 secret URN (cor:api:240:01: consumers never re-derive the arity rule). */
+/**
+ * The typed owner of a v2 secret URN (cor:api:240:01: consumers never re-derive the arity rule). `ownerKind: 'root'`
+ * is the flat org/user secret; `'app'` is the App secret. Same `scheme`/`type`/`root` fields as `ParsedNodeRevUrnV2`.
+ */
 export type ParsedSecretUrnV2 =
-  | { ownerKind: 'principal'; root: string; name: string }
-  | { ownerKind: 'app'; root: string; appSlug: string; name: string };
+  | { scheme: 'hrn'; type: 'secret'; ownerKind: 'root'; root: string; name: string }
+  | { scheme: 'hrn'; type: 'secret'; ownerKind: 'app'; root: string; appSlug: string; name: string };
 
 /**
- * Parse a v2 `secret` URN and say whose it is: `principal` (org or user root, flat `<root>:<name>`) or `app`
+ * Parse a v2 `secret` URN and say whose it is: `root` (org or user root, flat `<root>:<name>`) or `app`
  * (`<root>:app:<app-slug>:<name>`). Throws `UrnParseError` for anything `parseUrnV2` refuses or a non-secret type.
  */
 export function parseSecretUrnV2(input: string): ParsedSecretUrnV2 {
   const p = parseUrnV2(input);
   if (p.type !== 'secret' || p.fragment !== undefined) throw new UrnParseError(input, 'invalid-segment-shape');
-  if (p.segments.length === 1) return { ownerKind: 'principal', root: p.root, name: p.segments[0]! };
-  return { ownerKind: 'app', root: p.root, appSlug: p.segments[1]!, name: p.segments[2]! };
+  if (p.segments.length === 1) return { scheme: 'hrn', type: 'secret', ownerKind: 'root', root: p.root, name: p.segments[0]! };
+  return { scheme: 'hrn', type: 'secret', ownerKind: 'app', root: p.root, appSlug: p.segments[1]!, name: p.segments[2]! };
 }
 
 /** Compose `hrn:apprun:<root>:<app>:<run-id>`. */

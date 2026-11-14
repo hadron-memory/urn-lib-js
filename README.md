@@ -39,7 +39,7 @@ ported too:
   never sits under a reserved root (`server`, `platform`). The #679 `::` spelling
   `<root>::<app|memory>:<slug>::<name>` is refused by `parseUrn`, never normalized.
   Build with `composeAppSecretUrnV2`; `parseSecretUrnV2` says whose it is
-  (`{ownerKind: 'principal', root, name}` or `{ownerKind: 'app', root, appSlug, name}`),
+  (`{ownerKind: 'root', root, name}` or `{ownerKind: 'app', root, appSlug, name}`),
   so consumers never re-derive the arity rule.
 - **apprun** — `hrn:apprun:<root>:<app>:<run-id>` (fixed arity).
 - **noderev** — `hrn:noderev:<root>:<mem>:<loc...>:<rev>`, **end-anchored** (last
