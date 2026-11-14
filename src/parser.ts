@@ -62,21 +62,14 @@ function rewriteSecretUserRoot(segments: string[]): string[] {
 }
 
 /**
- * Secret (#679) shape check at parse time. A secret URN is
- * `<root>::[<app|memory>:<slug>::]<name>` — at most 3 hierarchy segments, and
- * when the middle owner segment is present it MUST be exactly `app:<slug>` or
- * `memory:<slug>`. Rejecting a bad marker here keeps parseUrn consistent with
- * the resolution parser instead of parse-OK-then-resolve-fail.
+ * Secret shape check at parse time. The v1 `::` secret arm is the flat shape only: `<root>::<name>` (two segments).
+ * The #679 spelling `<root>::<app|memory>:<slug>::<name>` is REFUSED, never normalized into the App shape
+ * (urn-lib-js#40, cor:urn:010:01 r81 Legacy clarification); the App shape lives in the flat v2 grammar
+ * (`hrn:secret:<root>:app:<app-slug>:<name>`). The v1 spellings of the flat shape stay accepted.
  */
 function validateSecretSegments(input: string, segments: string[]): void {
-  if (segments.length > 3) {
-    throw new UrnParseError(input, 'invalid-segment-shape', segments[3]);
-  }
-  if (segments.length === 3) {
-    const atoms = segments[1]!.split(':');
-    if (atoms.length !== 2 || (atoms[0] !== 'app' && atoms[0] !== 'memory')) {
-      throw new UrnParseError(input, 'invalid-segment-shape', segments[1]);
-    }
+  if (segments.length > 2) {
+    throw new UrnParseError(input, 'invalid-segment-shape', segments[segments.length === 3 ? 1 : 3]);
   }
 }
 
@@ -137,9 +130,8 @@ function rejectInvalidSegmentShapes(input: string, type: string, segments: strin
 
 /** Position-aware reserved-word rejection during parsing. */
 function rejectReservedWordsAtIllegalPositions(input: string, type: string, segments: string[]): void {
-  // Secret (#679): its positions (`<root>::[<app|memory>:<slug>::]<name>`) don't
-  // follow the node/memory role-marker rules; enforce its own shape here (it
-  // skips cat-4 stripping, so a bad marker would otherwise only fail at resolution).
+  // Secret: its flat `<root>::<name>` shape doesn't follow the node/memory role-marker rules; enforce its own
+  // shape here (it skips cat-4 stripping).
   if (type === 'secret') {
     validateSecretSegments(input, segments);
     return;

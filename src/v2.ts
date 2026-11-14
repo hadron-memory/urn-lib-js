@@ -79,8 +79,8 @@ const V2_PREFIX_RE = /^(hrn|urn):([a-z][a-z0-9-]*):(.+)$/;
  */
 function validateV2Arity(input: string, type: string, segments: string[], root: string): void {
   switch (type) {
-    case 'secret': // hrn:secret:<root>:<name> — exactly one name atom (org/user root).
-      if (segments.length !== 1) throw new UrnParseError(input, 'invalid-segment-shape');
+    case 'secret': // flat `<root>:<name>` or the App shape `<root>:app:<app-slug>:<name>` (urn-lib-js#40).
+      validateSecretArity(input, root, segments);
       break;
     case 'apprun': // hrn:apprun:<root>:<app>:<run-id>
     case 'worker': // hrn:worker:<root>:<app>:<worker-slug>
@@ -108,6 +108,22 @@ function validateV2Arity(input: string, type: string, segments: string[], root: 
 
 /** Reserved roots (cor:urn:010:01 R3): no principal owns them; they name platform-level things. */
 const RESERVED_ROOTS: ReadonlySet<string> = new Set<string>(['server', 'platform']);
+
+/**
+ * `secret` arity (urn-lib-js#40, cor:urn:010:01 r81). Arity decides the shape: ONE part after the root is the flat
+ * org/user secret (`hrn:secret:acme.com:app` is a flat secret that happens to be named `app`); exactly THREE parts
+ * whose first is the literal lowercase `app` is the App shape `<root>:app:<app-slug>:<name>`. Everything else is
+ * refused: two parts, four or more, and any other marker (`APP`, `memory`, `org`, `agent`, `user`). The App shape
+ * never takes a reserved root (`server`, `platform`, case-insensitive: an owner kind never sits under one). The slug
+ * and name are checked by the atom charset only; reserved words are a registration rule, and the server's narrower
+ * secret-name pattern stays server-side.
+ */
+function validateSecretArity(input: string, root: string, segments: string[]): void {
+  const bad = () => new UrnParseError(input, 'invalid-segment-shape');
+  if (segments.length === 1) return;
+  if (segments.length !== 3 || segments[0] !== 'app') throw bad();
+  if (RESERVED_ROOTS.has(root.toLowerCase())) throw bad();
+}
 
 /**
  * `aiconf` arity (urn-lib-js#29, cor:urn:010:01 r59 V60-V63). Under a reserved
@@ -212,6 +228,30 @@ export function isFlatV2(input: string): boolean {
 /** Compose `hrn:secret:<root>:<name>` (org/user root + a single name atom). */
 export function composeSecretUrnV2(root: string, name: string): string {
   return composeUrnV2('secret', root, name);
+}
+
+/**
+ * Compose the App secret URN `hrn:secret:<root>:app:<app-slug>:<name>` (urn-lib-js#40). Emits the lowercase `app`
+ * marker and refuses whatever `parseUrnV2` refuses (a reserved root, a malformed slug or name).
+ */
+export function composeAppSecretUrnV2(root: string, appSlug: string, name: string): string {
+  return composeUrnV2('secret', root, 'app', appSlug, name);
+}
+
+/** The typed owner of a v2 secret URN (cor:api:240:01: consumers never re-derive the arity rule). */
+export type ParsedSecretUrnV2 =
+  | { ownerKind: 'principal'; root: string; name: string }
+  | { ownerKind: 'app'; root: string; appSlug: string; name: string };
+
+/**
+ * Parse a v2 `secret` URN and say whose it is: `principal` (org or user root, flat `<root>:<name>`) or `app`
+ * (`<root>:app:<app-slug>:<name>`). Throws `UrnParseError` for anything `parseUrnV2` refuses or a non-secret type.
+ */
+export function parseSecretUrnV2(input: string): ParsedSecretUrnV2 {
+  const p = parseUrnV2(input);
+  if (p.type !== 'secret' || p.fragment !== undefined) throw new UrnParseError(input, 'invalid-segment-shape');
+  if (p.segments.length === 1) return { ownerKind: 'principal', root: p.root, name: p.segments[0]! };
+  return { ownerKind: 'app', root: p.root, appSlug: p.segments[1]!, name: p.segments[2]! };
 }
 
 /** Compose `hrn:apprun:<root>:<app>:<run-id>`. */
