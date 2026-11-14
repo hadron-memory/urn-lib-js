@@ -40,9 +40,9 @@ export type { DisplayUrnType, DisplayParsedUrnType, ParsedDisplayUrn } from './d
 // Per-entity shapes + typed compose/parse helpers land in #696.
 export {
   V2_URN_TYPES, V2_FRAGMENTS, FRAGMENT_PARENT_TYPES, parseUrnV2, composeUrnV2, isFlatV2,
-  composeSecretUrnV2, composeAppRunUrnV2, composeWorkerUrnV2,
+  composeSecretUrnV2, composeAppSecretUrnV2, parseSecretUrnV2, composeAppRunUrnV2, composeWorkerUrnV2,
   composeTickerUrnV2, composeAgentTaskUrnV2, composeAppEventUrnV2, composeGrantUrnV2, composeActionUrnV2, composeNodeRevUrnV2,
   composeDataFragmentV2,
   parseNodeRevUrnV2,
 } from './v2.js';
-export type { V2UrnType, ParsedUrnV2, ParsedNodeRevUrnV2 } from './v2.js';
+export type { V2UrnType, ParsedUrnV2, ParsedNodeRevUrnV2, ParsedSecretUrnV2 } from './v2.js';

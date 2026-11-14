@@ -30,8 +30,17 @@ colon, no sigil), additive to the v1 surface.
 **Per-entity v2 shapes** (hadron-server#696, decision D-2026-07-15-006) are
 ported too:
 
-- **secret** — `hrn:secret:<root>:<name>`, org/user root + exactly one name atom
-  (the v1 `app:`/`memory:` markers have no v2 equivalent and are rejected).
+- **secret** — two shapes, and the arity decides which: `hrn:secret:<root>:<name>`
+  (org/user root + exactly one name atom) and the App secret
+  `hrn:secret:<root>:app:<app-slug>:<name>` (the literal lowercase `app` marker,
+  then the App's slug and the secret's name; urn-lib-js#40). `hrn:secret:<root>:app`
+  is still the flat secret named `app`. Two parts, four or more parts, and any other
+  marker (`APP`, `memory`, `org`, `agent`, `user`) are refused, and the App shape
+  never sits under a reserved root (`server`, `platform`). The #679 `::` spelling
+  `<root>::<app|memory>:<slug>::<name>` is refused by `parseUrn`, never normalized.
+  Build with `composeAppSecretUrnV2`; `parseSecretUrnV2` says whose it is
+  (`{ownerKind: 'root', root, name}` or `{ownerKind: 'app', root, appSlug, name}`),
+  so consumers never re-derive the arity rule.
 - **apprun** — `hrn:apprun:<root>:<app>:<run-id>` (fixed arity).
 - **noderev** — `hrn:noderev:<root>:<mem>:<loc...>:<rev>`, **end-anchored** (last
   atom is the revision id); decompose with `parseNodeRevUrnV2`.
@@ -52,7 +61,7 @@ round-trips. A fragment on a v2-**only** parent (`apprun`, `worker`) has no v1
 type equivalent and keeps its `unknown-type` error; reach for `parseUrnV2` when
 you need the parent type and fragment as separate fields.
 
-Typed helpers: `composeSecretUrnV2`, `composeAppRunUrnV2`, `composeNodeRevUrnV2`,
+Typed helpers: `composeSecretUrnV2`, `composeAppSecretUrnV2`, `parseSecretUrnV2`, `composeAppRunUrnV2`, `composeNodeRevUrnV2`,
 `composeDataFragmentV2`, and `parseNodeRevUrnV2`.
 
 Not yet ported (later increments, gated by the same corpus): legacy chain→flat
