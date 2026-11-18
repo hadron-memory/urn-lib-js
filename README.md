@@ -161,15 +161,16 @@ npm run build
 ## Tickers and agent tasks (grammar v2)
 
 `hrn:ticker:<root>:<app-slug>:<ticker-slug>` and
-`hrn:agenttask:<root>:<app-slug>:<task-id>` each have exactly two segments after
+`hrn:agenttask:<root>:<app-slug>:<task-handle>` each have exactly two segments after
 the root. Use `composeTickerUrnV2` with the ticker's permanent derived slug and
-`composeAgentTaskUrnV2` with the task's id. Both parse through `parseUrnV2`,
+`composeAgentTaskUrnV2` with the task's handle. Both parse through `parseUrnV2`,
 render their own display badge, and normalize a legacy `urn:` prefix to `hrn:`.
 They have no v1 equivalent; `parseUrn` rejects them with `unknown-type`.
 
-Task ids follow the shared URN atom rule (letters/digits, dots, underscores and
-hyphens, at most 64 characters). A 32-hex or cuid id is valid in the task-id
-leaf; root-name registration restrictions do not apply to that leaf.
+The agent-task leaf is the handle `AT<n>(.<n>)*` (cor:urn:010:01, #2553 +
+ruling 0065); the task-id leaf was never built. Handles follow the shared URN
+atom rule (letters/digits, dots, underscores and hyphens, at most 64
+characters); root-name registration restrictions do not apply to that leaf.
 
 ## App events (grammar v2)
 

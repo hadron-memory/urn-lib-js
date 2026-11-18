@@ -126,3 +126,16 @@ describe('conformance corpus (v1 parity)', () => {
     });
   }
 });
+
+// Not a corpus case: the docstring is prose, not a cross-language contract (the
+// Go twin's wording is free). The one-line assertion is issue #30's acceptance:
+// composeAgentTaskUrnV2's doc must name the Decided handle leaf, because the
+// task-id leaf was never built (cor:urn:010:01, #2553 + ruling 0065).
+describe('agent-task docstring (issue #30)', () => {
+  it('names the handle leaf, not the task id', () => {
+    const src = readFileSync(fileURLToPath(new URL('../src/v2.ts', import.meta.url)), 'utf8');
+    const doc = src.match(/\/\*\* Compose `hrn:agenttask:[^]*?\*\//)?.[0] ?? '';
+    expect(doc, 'composeAgentTaskUrnV2 docstring not found').toContain('<task-handle>');
+    expect(doc).not.toContain("task's id");
+  });
+});

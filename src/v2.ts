@@ -85,7 +85,7 @@ function validateV2Arity(input: string, type: string, segments: string[], root: 
     case 'apprun': // hrn:apprun:<root>:<app>:<run-id>
     case 'worker': // hrn:worker:<root>:<app>:<worker-slug>
     case 'ticker': // hrn:ticker:<root>:<app>:<ticker-slug>
-    case 'agenttask': // hrn:agenttask:<root>:<app>:<task-id>
+    case 'agenttask': // hrn:agenttask:<root>:<app>:<task-handle>
     case 'appevent': // hrn:appevent:<root>:<app>:<event-id>
     case 'grant': // hrn:grant:<root>:<app>:<grant-id>
     case 'action': // hrn:action:<root>:<agent-slug>:<code>
@@ -278,7 +278,7 @@ export function composeTickerUrnV2(root: string, app: string, tickerSlug: string
   return composeUrnV2('ticker', root, app, tickerSlug);
 }
 
-/** Compose `hrn:agenttask:<root>:<app>:<task-id>` using the task's id. */
+/** Compose `hrn:agenttask:<root>:<app>:<task-handle>` using the task's handle `AT<n>(.<n>)*` (cor:urn:010:01, #2553 + ruling 0065); the task-id leaf was never built. */
 export function composeAgentTaskUrnV2(root: string, app: string, taskId: string): string {
   return composeUrnV2('agenttask', root, app, taskId);
 }
