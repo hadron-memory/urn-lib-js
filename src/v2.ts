@@ -278,9 +278,20 @@ export function composeTickerUrnV2(root: string, app: string, tickerSlug: string
   return composeUrnV2('ticker', root, app, tickerSlug);
 }
 
-/** Compose `hrn:agenttask:<root>:<app>:<task-id>` using the task's id. */
-export function composeAgentTaskUrnV2(root: string, app: string, taskId: string): string {
-  return composeUrnV2('agenttask', root, app, taskId);
+/**
+ * Compose `hrn:agenttask:<root>:<app>:<handle>` using the task's handle `AT<n>(.<n>)*` (ruling 0065), EMITTED ENTIRELY
+ * IN LOWER CASE (ruling 0278): `AT3.405` composes as `...:at3.405`, and so does `at3.405`. Parse stays case-insensitive
+ * about what it is given but keeps the leaf verbatim, so the lower-case form is this composer's emission, not a parse
+ * normalization (the shared corpus pins both).
+ *
+ * The fold is ASCII-only (`A-Z`) on purpose: a Unicode `toLowerCase()` folds U+212A (KELVIN SIGN) to ASCII `k` and
+ * U+0130 to `i` plus a combining dot, so a handle that the atom charset refuses would be silently rewritten into one it
+ * accepts, and urn-lib-go (whose lower-casing differs) would disagree. A non-ASCII handle is left as typed and refused
+ * as `invalid-charset`, exactly as before the ruling, in both libraries.
+ */
+export function composeAgentTaskUrnV2(root: string, app: string, handle: string): string {
+  // A non-string (outside the contract) is passed through untouched, so its behavior is exactly what it was before the ruling.
+  return composeUrnV2('agenttask', root, app, typeof handle === 'string' ? handle.replace(/[A-Z]/g, (c) => c.toLowerCase()) : handle);
 }
 
 /** Compose `hrn:appevent:<root>:<app>:<event-id>` using the event's id (cor:urn:010:01, App event). */
