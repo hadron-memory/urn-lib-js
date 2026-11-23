@@ -85,7 +85,7 @@ function validateV2Arity(input: string, type: string, segments: string[], root: 
     case 'apprun': // hrn:apprun:<root>:<app>:<run-id>
     case 'worker': // hrn:worker:<root>:<app>:<worker-slug>
     case 'ticker': // hrn:ticker:<root>:<app>:<ticker-slug>
-    case 'agenttask': // hrn:agenttask:<root>:<app>:<task-id>
+    case 'agenttask': // hrn:agenttask:<root>:<app>:<handle>
     case 'appevent': // hrn:appevent:<root>:<app>:<event-id>
     case 'grant': // hrn:grant:<root>:<app>:<grant-id>
     case 'action': // hrn:action:<root>:<agent-slug>:<code>
