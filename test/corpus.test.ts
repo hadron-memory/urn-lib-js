@@ -134,8 +134,9 @@ describe('conformance corpus (v1 parity)', () => {
 describe('agent-task docstring (issue #30)', () => {
   it('names the handle leaf, not the task id', () => {
     const src = readFileSync(fileURLToPath(new URL('../src/v2.ts', import.meta.url)), 'utf8');
-    const doc = src.match(/\/\*\* Compose `hrn:agenttask:[^]*?\*\//)?.[0] ?? '';
-    expect(doc, 'composeAgentTaskUrnV2 docstring not found').toContain('<task-handle>');
+    const doc = src.match(/\/\*\*(?:(?!\*\/)[^])*\*\/\s*export function composeAgentTaskUrnV2/)?.[0] ?? '';
+    expect(doc, 'composeAgentTaskUrnV2 docstring not found').toContain('hrn:agenttask:<root>:<app>:<handle>');
+    expect(doc).toContain('AT<n>(.<n>)*');
     expect(doc).not.toContain("task's id");
   });
 });
