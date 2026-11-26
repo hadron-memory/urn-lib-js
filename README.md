@@ -216,15 +216,21 @@ This is create/rename policy. Generic slug validation, URN parsing and
 composition remain lenient so existing stored URNs and ID-shaped task leaves
 still round-trip. The obsolete `org-root-not-dotted` reason is retired.
 
-## Actions (grammar v2)
+## Event codes (grammar v2)
 
-`hrn:action:<root>:<agent-slug>:<code>` has exactly two segments after the root:
-the Team Agent's slug and the action's code (cor:urn:010:01). Use
-`composeActionUrnV2`. It parses through `parseUrnV2`, renders its own display
+`hrn:eventcode:<root>:<agent-slug>:<code>` has exactly two segments after the root:
+the Team Agent's slug and the event code (cor:urn:010:01). Use
+`composeEventCodeUrnV2`. It parses through `parseUrnV2`, renders its own display
 badge, and normalizes a legacy `urn:` prefix to `hrn:`. It has no v1
 equivalent; `parseUrn` rejects it with `unknown-type`. Both segments follow the
 shared URN atom rule (letters/digits, dots, underscores and hyphens, at most 64
 characters).
+
+The type was called `action` before v26. `hrn:action:…` is never accepted or
+normalized as a legacy spelling of `eventcode`: `action` is no longer a
+registered type (the word stays reserved for grants), so the string is refused
+like any unregistered type word (`unknown-type`; the unknown chip in
+`parseDisplayUrn`).
 
 ## AI service configs (grammar v2)
 

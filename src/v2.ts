@@ -39,7 +39,7 @@ import { validateAtomShape } from './slug.js';
  */
 export const V2_URN_TYPES = [
   'org', 'user', 'mem', 'agent', 'app', 'node', 'edge', 'asset', 'secret',
-  'apprun', 'worker', 'ticker', 'agenttask', 'appevent', 'grant', 'action', 'noderev', 'appkey', 'aiconf', 'tool', 'server', 'userapikey',
+  'apprun', 'worker', 'ticker', 'agenttask', 'appevent', 'grant', 'eventcode', 'noderev', 'appkey', 'aiconf', 'tool', 'server', 'userapikey',
   'agentschedule', 'agentwebhook', 'license', 'subscription', 'usage',
   'reference', 'session', 'platform',
 ] as const;
@@ -88,7 +88,7 @@ function validateV2Arity(input: string, type: string, segments: string[], root: 
     case 'agenttask': // hrn:agenttask:<root>:<app>:<handle>
     case 'appevent': // hrn:appevent:<root>:<app>:<event-id>
     case 'grant': // hrn:grant:<root>:<app>:<grant-id>
-    case 'action': // hrn:action:<root>:<agent-slug>:<code>
+    case 'eventcode': // hrn:eventcode:<root>:<agent-slug>:<code>
       if (segments.length !== 2) throw new UrnParseError(input, 'invalid-segment-shape');
       break;
     case 'noderev': // hrn:noderev:<root>:<mem>:<loc...>:<rev> — mem + >=1 loc atom + rev.
@@ -304,9 +304,9 @@ export function composeGrantUrnV2(root: string, app: string, grantId: string): s
   return composeUrnV2('grant', root, app, grantId);
 }
 
-/** Compose `hrn:action:<root>:<agent-slug>:<code>`, keyed on the Team Agent (cor:urn:010:01). */
-export function composeActionUrnV2(root: string, agentSlug: string, code: string): string {
-  return composeUrnV2('action', root, agentSlug, code);
+/** Compose `hrn:eventcode:<root>:<agent-slug>:<code>`, keyed on the Team Agent (cor:urn:010:01). */
+export function composeEventCodeUrnV2(root: string, agentSlug: string, code: string): string {
+  return composeUrnV2('eventcode', root, agentSlug, code);
 }
 
 /**
