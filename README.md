@@ -216,6 +216,8 @@ This is create/rename policy. Generic slug validation, URN parsing and
 composition remain lenient so existing stored URNs and ID-shaped task leaves
 still round-trip. The obsolete `org-root-not-dotted` reason is retired.
 
+<a id="actions"></a>
+
 ## Event codes (grammar v2)
 
 `hrn:eventcode:<root>:<agent-slug>:<code>` has exactly two segments after the root:
