@@ -88,6 +88,7 @@ function validateV2Arity(input: string, type: string, segments: string[], root: 
     case 'agenttask': // hrn:agenttask:<root>:<app>:<handle>
     case 'appevent': // hrn:appevent:<root>:<app>:<event-id>
     case 'grant': // hrn:grant:<root>:<app>:<grant-id>
+    case 'appkey': // hrn:appkey:<root>:<app>:<key-id>
     case 'eventcode': // hrn:eventcode:<root>:<agent-slug>:<code>
       if (segments.length !== 2) throw new UrnParseError(input, 'invalid-segment-shape');
       break;
@@ -302,6 +303,18 @@ export function composeAppEventUrnV2(root: string, app: string, eventId: string)
 /** Compose `hrn:grant:<root>:<app>:<grant-id>` using the grant's id (cor:urn:010:01 Grant row, ruling 0255 item 9). */
 export function composeGrantUrnV2(root: string, app: string, grantId: string): string {
   return composeUrnV2('grant', root, app, grantId);
+}
+
+/**
+ * Compose `hrn:appkey:<root>:<app>:<key-id>` using the App key's id (cor:urn:010:01 App key row,
+ * Decided Holger 2026-11-26, answer A on hadron-server#4528). The leaf is the key's ID, never its
+ * label (free text, renameable) and never its preview or hash (derived from the secret); the URN is
+ * computed, not stored. The id is one ordinary atom — the server's Prisma default is a cuid and its
+ * client extension mints its own ids, so more than one shape exists and NO id format is matched
+ * here (the atom rule only, case preserved).
+ */
+export function composeAppKeyUrnV2(root: string, app: string, keyId: string): string {
+  return composeUrnV2('appkey', root, app, keyId);
 }
 
 /** Compose `hrn:eventcode:<root>:<agent-slug>:<code>`, keyed on the Team Agent (cor:urn:010:01). */

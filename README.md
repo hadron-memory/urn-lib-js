@@ -205,6 +205,25 @@ org-wide grant has no URN here. Today `parseUrn` (v1) rejects `hrn:grant` with
 `unknown-type`; that is current behaviour, not a ruled rejection (grant being
 greenfield v2-only is still Proposed in cor:urn:010:01).
 
+## App keys (grammar v2)
+
+`hrn:appkey:<root>:<app-slug>:<key-id>` addresses one credential of an App
+(cor:urn:010:01, App key row; Decided, Holger 2026-11-26, answer A on
+hadron-server#4528). It has exactly two segments after the root, like
+`hrn:grant`, with the App slug as the container and the key's id as the leaf.
+Use `composeAppKeyUrnV2` with the key's id. It parses through `parseUrnV2`,
+renders its own display badge, normalizes a legacy `urn:` prefix to `hrn:`,
+and refuses a `#data` fragment. The key id is one ordinary URN atom
+(letters/digits, dots, underscores and hyphens, at most 64 characters); the
+server's Prisma default is a cuid and its client extension mints its own ids,
+so more than one shape exists and the library matches no id format — the atom
+rule only. The leaf is never the key's label (free text, renameable) and never
+its preview or hash (derived from the secret); the URN is computed, not
+stored, so renaming the App re-addresses every key. It is v2-only: `parseUrn`
+rejects it with `unknown-type`. The word `appkey` was already in the v2 type
+list before this library release (reserved), so what this change adds is the
+arity rule, the typed composer and the display badge.
+
 ## Root registration policy
 
 `validateOrgSlug` admits dotted and undotted organization names. Both it and
