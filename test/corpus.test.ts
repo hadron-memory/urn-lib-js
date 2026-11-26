@@ -60,7 +60,7 @@ const FNS: Record<string, (a: string[]) => unknown> = {
   parseSecretUrnV2: (a) => urn.parseSecretUrnV2(a[0]!),
   composeAppRunUrnV2: (a) => urn.composeAppRunUrnV2(a[0]!, a[1]!, a[2]!),
   composeTickerUrnV2: (a) => urn.composeTickerUrnV2(a[0]!, a[1]!, a[2]!),
-  composeActionUrnV2: (a) => urn.composeActionUrnV2(a[0]!, a[1]!, a[2]!),
+  composeEventCodeUrnV2: (a) => urn.composeEventCodeUrnV2(a[0]!, a[1]!, a[2]!),
   composeAgentTaskUrnV2: (a) => urn.composeAgentTaskUrnV2(a[0]!, a[1]!, a[2]!),
   composeAppEventUrnV2: (a) => urn.composeAppEventUrnV2(a[0]!, a[1]!, a[2]!),
   composeGrantUrnV2: (a) => urn.composeGrantUrnV2(a[0]!, a[1]!, a[2]!),
